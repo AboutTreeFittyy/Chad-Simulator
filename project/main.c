@@ -12,43 +12,6 @@ void playAnim(SPRITE *spr, int start, int endFrame){
 	}	
 }
 
-//Exits game when ESC key pressed
-void getinput(){
-    //quit game
-    if (key[KEY_ESC]){
-        gameon = 1;
-    }//Move left
-    else if (key[KEY_A]){
-        player[0]->xspeed = -CHADSPEED;
-        playAnim(player[0], 0, 3);
-    }//Move right
-    else if (key[KEY_D]){
-        player[0]->xspeed = CHADSPEED;
-        playAnim(player[0], 4, 7);
-    }//Flex/Fire
-    else if (key[KEY_W] && !fire){
-        player[0]->xspeed = 0;
-        playAnim(player[0], 8, 15);
-        fire=1;
-        hotstuff[0]->x = player[0]->x;
-    	hotstuff[0]->y = player[0]->y;
-    }//Reserved in case more needed
-    else if (key[KEY_S]){
-        
-    }else{
-    	player[0]->animdir = 0; //stop playing animation
-		player[0]->xspeed = 0;//stop moving, nothing pressed
-	}
-}
-
-void timer1(void){
-	counter++;
-	framerate = ticks;
-	ticks = 0;
-	rested = resting;
-}
-END_OF_FUNCTION(timer1)
-
 void rest1(void){
 	resting++;
 }
@@ -185,7 +148,7 @@ void loadsprites(void){
 		//initialize the fat sprites
 	    enemies[n] = malloc(sizeof(SPRITE));
 	    enemies[n]->x = (n * 105);
-	    enemies[n]->y = 100;
+	    enemies[n]->y = 0;
 	    enemies[n]->width = sprite_images[0][0]->w;
 	    enemies[n]->height = sprite_images[0][0]->h;
 	    enemies[n]->xdelay = 1;
@@ -211,7 +174,7 @@ void loadsprites(void){
 		//initialize the fat CW sprites
 	    enemies[n] = malloc(sizeof(SPRITE));
 	    enemies[n]->x = ((n-10)* 105);
-	    enemies[n]->y = 200;
+	    enemies[n]->y = 100;
 	    enemies[n]->width = sprite_images[1][0]->w;
 	    enemies[n]->height = sprite_images[1][0]->h;
 	    enemies[n]->xdelay = 1;
@@ -237,7 +200,7 @@ void loadsprites(void){
 		//initialize the vlad sprites
 	    enemies[n] = malloc(sizeof(SPRITE));
 	    enemies[n]->x = 100 + ((n-20)* 105);
-	    enemies[n]->y = 300;
+	    enemies[n]->y = 200;
 	    enemies[n]->width = sprite_images[2][0]->w;
 	    enemies[n]->height = sprite_images[2][0]->h;
 	    enemies[n]->xdelay = 1;
@@ -326,120 +289,75 @@ void loadsprites(void){
     lame[0]->alive = 1;
 }
 
-int main(void){
-    //initialize
-    allegro_init();
-    set_color_depth(16);
-    set_gfx_mode(MODE, WIDTH, HEIGHT, 0, 0);
-    srand(time(NULL));
-    install_keyboard();
-    install_timer();
-    int ret = set_gfx_mode(MODE, WIDTH, HEIGHT, 0, 0);
-    if (ret != 0) {
-        allegro_message(allegro_error);
-        return;
+void checkFire(){
+	//check if an enemy should fire
+	if (clock() > start + 4000){
+        blit(back, buffer, lame[0]->x, lame[0]->y, lame[0]->x, lame[0]->y, lame[0]->width, lame[0]->height);
+		updatesprite(lame[0]);
+        warpsprite(lame[0]);
+		start = clock();
+        enemyFired(rand()%(NUMENEMIES-1));
+	}//Check if player firing
+	if(fire){
+		blit(back, buffer, hotstuff[0]->x, hotstuff[0]->y, hotstuff[0]->x, hotstuff[0]->y, hotstuff[0]->width, hotstuff[0]->height);
+		updatesprite(hotstuff[0]);
+        warpsprite(hotstuff[0]);
+        checkPlayerProjectile();
+        if(hotstuff[0]->y < 5 || !fire){//hit top, reset
+        	fire=0;
+		}else{//dont draw unless still moving
+			draw_sprite(buffer, sprite_images[4][hotstuff[0]->curframe], hotstuff[0]->x, hotstuff[0]->y);
+		}            
+	}
+	//Check if enemy firing
+	if(enemyFire){
+		blit(back, buffer, lame[0]->x, lame[0]->y, lame[0]->x, lame[0]->y, lame[0]->width, lame[0]->height);
+		updatesprite(lame[0]);
+        warpsprite(lame[0]);
+        checkEnemyProjectile();
+        if(lame[0]->y > 900 || !enemyFire){//hit bottom, reset
+        	enemyFire=0;
+		}else{//dont draw unless still moving
+			draw_sprite(buffer, sprite_images[5][lame[0]->curframe], lame[0]->x, lame[0]->y);
+		}            
+	}
+}
+
+void updateGame(){
+	//restore the background from regular sprites
+    for (n=0; n<NUMPLAYERSPRITES; n++){
+    	blit(back, buffer, player[n]->x, player[n]->y, player[n]->x, player[n]->y, player[n]->width, player[n]->height);
     }
-	gameon = 0;
-	fire = 0;
-	enemyFire = 0;
-    //create double buffer
-    buffer = create_bitmap(SCREEN_W,SCREEN_H);
-    //load and draw the blocks
-    back = load_bitmap("bgbeach.bmp", NULL);
-    blit(back,buffer,0,0,0,0,back->w,back->h);
-    //load and set up sprites
-    loadsprites();
-	//lock interrupt variables
-    LOCK_VARIABLE(counter);
-    LOCK_VARIABLE(framerate);
-    LOCK_VARIABLE(ticks);
-    LOCK_VARIABLE(resting);
-    LOCK_VARIABLE(rested);
-    LOCK_FUNCTION(timer1);
-    LOCK_FUNCTION(rest1);
-    install_int(timer1, 1000);
-    printf("LOADED.");
-    //game loop
-    while (!gameon){
-        //check for escape to quit & input to move Chad
-        if (keypressed()){
-        	getinput();
-		}
-		
-		//check if an enemy should fire
-		if (clock() > start + 4000){
-            blit(back, buffer, lame[0]->x, lame[0]->y, lame[0]->x, lame[0]->y, lame[0]->width, lame[0]->height);
-			updatesprite(lame[0]);
-            warpsprite(lame[0]);
-			start = clock();
-            enemyFired(rand()%(NUMENEMIES-1));
-        }
-		//restore the background from regular sprites
-        for (n=0; n<NUMPLAYERSPRITES; n++){
-        	blit(back, buffer, player[n]->x, player[n]->y, player[n]->x, player[n]->y, player[n]->width, player[n]->height);
-        }
-        //restore the background from enemy sprites
-        for (n=0; n<NUMENEMIES; n++){
-        	blit(back, buffer, enemies[n]->x, enemies[n]->y, enemies[n]->x, enemies[n]->y, enemies[n]->width, enemies[n]->height);
-        }
-        //update the sprites
-        for (n=0; n<NUMPLAYERSPRITES; n++){
-            updatesprite(player[n]);
-            warpsprite(player[n]);
-            draw_sprite(buffer, sprite_images[3][player[n]->curframe], player[n]->x, player[n]->y);
-        }
-		//update the enemy sprites
-        for(i = 0; i < 3; i++){
-        	for (n=0; n<10; n++){
-				f=(i*10)+n;
-				if(enemies[f]->alive){
-					updatesprite(enemies[f]);
-					if(enemies[f]->x>1090){
-						enemies[f]->x=0;
-						enemies[f]->y=enemies[f]->y+100;
-					}
-	            	warpsprite(enemies[f]);
-	            	draw_sprite(buffer, sprite_images[i][enemies[f]->curframe], enemies[f]->x, enemies[f]->y);
-				}				
-	        }
-		}
-		if(!player[0]->alive){//check if player has died
-			gameon=1;
-		}
-        //Check if firing
-		if(fire){
-			blit(back, buffer, hotstuff[0]->x, hotstuff[0]->y, hotstuff[0]->x, hotstuff[0]->y, hotstuff[0]->width, hotstuff[0]->height);
-			updatesprite(hotstuff[0]);
-            warpsprite(hotstuff[0]);
-            checkPlayerProjectile();
-            if(hotstuff[0]->y < 5 || !fire){//hit top, reset
-            	fire=0;
-			}else{//dont draw unless still moving
-				draw_sprite(buffer, sprite_images[4][hotstuff[0]->curframe], hotstuff[0]->x, hotstuff[0]->y);
-			}            
-		}
-		//Check if enemy firing
-		if(enemyFire){
-			blit(back, buffer, lame[0]->x, lame[0]->y, lame[0]->x, lame[0]->y, lame[0]->width, lame[0]->height);
-			updatesprite(lame[0]);
-            warpsprite(lame[0]);
-            checkEnemyProjectile();
-            if(lame[0]->y > 900 || !enemyFire){//hit bottom, reset
-            	enemyFire=0;
-			}else{//dont draw unless still moving
-				draw_sprite(buffer, sprite_images[5][lame[0]->curframe], lame[0]->x, lame[0]->y);
-			}            
-		}
-		//update ticks        
-		ticks++;
-        resting=0;
-        rest_callback(15, rest1);//This controls the speed of the game (frame rate)        
-        //update the screen
-        acquire_screen();
-        blit(buffer,screen,0,0,0,0,SCREEN_W-1,SCREEN_H-1);
-        release_screen();
+    //restore the background from enemy sprites
+    for (n=0; n<NUMENEMIES; n++){
+    	blit(back, buffer, enemies[n]->x, enemies[n]->y, enemies[n]->x, enemies[n]->y, enemies[n]->width, enemies[n]->height);
     }
-    //remove objects from memory
+    //update the sprites
+    for (n=0; n<NUMPLAYERSPRITES; n++){
+        updatesprite(player[n]);
+        warpsprite(player[n]);
+        draw_sprite(buffer, sprite_images[3][player[n]->curframe], player[n]->x, player[n]->y);
+    }
+	//update the enemy sprites
+    for(i = 0; i < 3; i++){
+    	for (n=0; n<10; n++){
+			f=(i*10)+n;
+			if(enemies[f]->alive){
+				updatesprite(enemies[f]);
+				if(enemies[f]->x>1090){
+					enemies[f]->x=0;
+					enemies[f]->y=enemies[f]->y+100;
+				}
+            	warpsprite(enemies[f]);
+            	draw_sprite(buffer, sprite_images[i][enemies[f]->curframe], enemies[f]->x, enemies[f]->y);
+			}				
+        }
+	}
+}
+
+//Deallocates memory used in game
+int destroy(){
+	//remove objects from memory
     destroy_bitmap(back);
     destroy_bitmap(buffer);
 	for(i=0;i<3;i++){
@@ -455,9 +373,128 @@ int main(void){
 			destroy_bitmap(sprite_images[3][f]);
 		}
         free(player[n]);
-    }
-    allegro_exit();
+    }    
     return 0;
+}
+
+//Exits game when ESC key pressed
+void getinput(){
+    //quit game
+    if (key[KEY_ESC]){
+        if(gameon){//on title screen so exit the program
+        	quitgame = 1;
+        	printf(".GAME-QUIT");
+		}else{
+			gameon = 1;//in a game so return to title screen by breaking out of game loop
+		}		
+    }//only need to use functions below when in game, this seperates mainscreen from game screen input
+    if(!gameon){
+	    if (key[KEY_A]){//move left
+	        player[0]->xspeed = -CHADSPEED;
+	        playAnim(player[0], 0, 3);
+	    }//Move right
+	    else if (key[KEY_D]){
+	        player[0]->xspeed = CHADSPEED;
+	        playAnim(player[0], 4, 7);
+	    }//Flex/Fire
+	    else if (key[KEY_W] && !fire){
+	        player[0]->xspeed = 0;
+	        playAnim(player[0], 8, 15);
+	        fire=1;
+	        hotstuff[0]->x = player[0]->x;
+	    	hotstuff[0]->y = player[0]->y;
+	    }//Reserved in case more needed
+	    else if (key[KEY_S]){
+	        
+	    }else if (key[KEY_P] || key[KEY_H]){//checks for P press
+	        if(key_shifts & KB_CTRL_FLAG){//checks if ctrl is held too
+				if(paused){
+		        	paused = 0; //UnPause
+				}else{
+					paused = 1; //Pause
+				}
+			}
+	    }else{
+	    	player[0]->animdir = 0; //stop playing animation
+			player[0]->xspeed = 0;//stop moving, nothing pressed
+		}
+	}
+	else{//Title screen so check for SPACE bar to begin
+		if (key[KEY_SPACE]){//Start a new game
+	        gameon = 0, paused = 0, fire = 0, enemyFire = 0;//Initialize the games global variables for a new session	        
+		    back = load_bitmap("bgbeach.bmp", NULL);//load and draw the blocks
+		    blit(back,buffer,0,0,0,0,back->w,back->h);		    
+		    loadsprites();//load and set up sprites
+		    printf(".STARTING-GAME");
+	        runGame(); //Run the game,
+	        printf(".GAME-INSTANCE-OVER");
+	    }
+	}
+}
+
+void runGame(){
+	//game loop
+    while (!gameon){
+        //check for escape to quit & input to move Chad
+        if (keypressed()){
+        	getinput();
+		}		
+		if(!paused){		
+			updateGame();			
+			if(!player[0]->alive){//check if player has died
+				gameon=1;
+			}
+	        checkFire();//Operates and maintains the firing function for player and enemy projectiles
+		}
+		//update ticks        
+		//ticks++;
+        rest_callback(15, rest1);//This controls the speed of the game (frame rate)        
+        //update the screen
+        acquire_screen();
+        blit(buffer,screen,0,0,0,0,SCREEN_W-1,SCREEN_H-1);
+        release_screen();
+    }
+    //Return to the title screen
+    destroy();//First clean up environment
+			//Now bring back the title screen
+	printf(".RETURN-TITLE");
+}
+
+
+//Main function, initializes program environment, runs game routine until quit (destroy function called elsewhere for most cleanup)
+int main(void){
+    //initialize
+    allegro_init();
+    set_color_depth(16);
+    set_gfx_mode(MODE, WIDTH, HEIGHT, 0, 0);
+    srand(time(NULL));
+    install_keyboard();
+    install_timer();
+    int ret = set_gfx_mode(MODE, WIDTH, HEIGHT, 0, 0);
+    if (ret != 0) {
+        allegro_message(allegro_error);
+        return;
+    }
+	quitgame = 0, gameon = 1;
+    //create double buffer
+    buffer = create_bitmap(SCREEN_W,SCREEN_H);    
+	//lock interrupt variables
+    //LOCK_VARIABLE(rested);
+    //LOCK_FUNCTION(rest1);
+	//Display title screen
+	title = load_bitmap("title_screen.bmp", NULL);//load and draw the blocks
+	blit(title,buffer,0,0,0,0,title->w,title->h);
+	printf(".TITLE");	  
+	while(!quitgame){
+		//Check for input to either quit completely or to start a game
+		if (keypressed()){
+        	getinput();
+		}
+		rest(50);
+	} 
+	printf(".ENDED.");
+    allegro_exit();
+	return 0;        
 }
 END_OF_MAIN()
 

@@ -1,5 +1,7 @@
-//Female Sprite source: Glorious DPRK Studios, https://opengameart.org/content/sweaty-obese-woman-in-dirty-burlap-underwear-spritesheets
-//Background image source: Glorious DPRK Studios, //Female Sprite source: tgfcoder, https://opengameart.org/content/sweaty-obese-woman-in-dirty-burlap-underwear-spritesheets
+//Female babe icons source Grahhhhh, https://opengameart.org/content/player-icons
+//Background image source: tgfcoder, https://opengameart.org/content/beach-background
+//Fat Female Sprite source: Glorious DPRK Studios, https://opengameart.org/content/sweaty-obese-woman-in-dirty-burlap-underwear-spritesheets
+//Chad and Vlad sprites were made by myself, Mathew Boland
 //////////////////////////////////////////////////
 // Game Programming All In One, Third Edition
 // Chapter 11 - TimerTest
@@ -35,6 +37,8 @@ typedef struct SPRITE{
 
 //variables
 BITMAP *back;
+BITMAP *title;
+BITMAP *pause;
 BITMAP *temp;
 BITMAP *sprite_images[10][20];//This limits max frames
 SPRITE *player[4];//player sprites
@@ -42,10 +46,12 @@ SPRITE *hotstuff[4];//player projectiles
 SPRITE *lame[4];//enemy projectiles
 SPRITE *enemies[30];//enemies
 BITMAP *buffer;
-int n, i, f, gameon, fire, start, enemyFire;
+int n, i, f, quitgame, gameon, paused, fire, start, enemyFire;
 
 //timer variables
 volatile int counter;
 volatile int ticks;
 volatile int framerate;
 volatile int resting, rested;
+
+void runGame();
