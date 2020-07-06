@@ -386,6 +386,7 @@ void getinput(){
         	printf(".GAME-QUIT");
 		}else{
 			gameon = 1;//in a game so return to title screen by breaking out of game loop
+			cont = 1;
 		}		
     }//only need to use functions below when in game, this seperates mainscreen from game screen input
     if(!gameon){
@@ -421,13 +422,21 @@ void getinput(){
 	}
 	else{//Title screen so check for SPACE bar to begin
 		if (key[KEY_SPACE]){//Start a new game
-	        gameon = 0, paused = 0, fire = 0, enemyFire = 0;//Initialize the games global variables for a new session	        
-		    back = load_bitmap("bgbeach.bmp", NULL);//load and draw the blocks
-		    blit(back,buffer,0,0,0,0,back->w,back->h);		    
-		    loadsprites();//load and set up sprites
-		    printf(".STARTING-GAME");
-	        runGame(); //Run the game,
-	        printf(".GAME-INSTANCE-OVER");
+	        if(!cont){
+				gameon = 0, paused = 0, fire = 0, enemyFire = 0;//Initialize the games global variables for a new session	        
+			    back = load_bitmap("bgbeach.bmp", NULL);//load and draw the blocks
+			    blit(back,buffer,0,0,0,0,back->w,back->h);		    
+			    loadsprites();//load and set up sprites
+			    printf(".STARTING-GAME");
+		        runGame(); //Run the game,
+		        printf(".GAME-INSTANCE-OVER");
+		    }else{//advance to next screen
+		    	cont = 0;
+		    	acquire_screen();
+				blit(title,buffer,0,0,0,0,title->w,title->h);
+				blit(buffer,screen,0,0,0,0,SCREEN_W-1,SCREEN_H-1);
+				release_screen();
+			}
 	    }
 	}
 }
@@ -453,7 +462,7 @@ void runGame(){
         release_screen();
     }
 	acquire_screen();//Now bring back the title screen
-	blit(title,buffer,0,0,0,0,title->w,title->h);
+	blit(intro,buffer,0,0,0,0,title->w,title->h);
 	blit(buffer,screen,0,0,0,0,SCREEN_W-1,SCREEN_H-1);
 	release_screen();		
 	printf(".RETURN-TITLE");
@@ -481,13 +490,14 @@ int main(void){
         allegro_message(allegro_error);
         return;
     }
-	quitgame = 0, gameon = 1;
+	quitgame = 0, cont = 1, gameon = 1;
     //create double buffer
     buffer = create_bitmap(SCREEN_W,SCREEN_H);
 	//Display title screen
-	title = load_bitmap("sprites/start_screen.bmp", NULL);//load and draw the blocks
+	intro = load_bitmap("sprites/intro_screen.bmp", NULL);//load first title image
+	title = load_bitmap("sprites/title_screen.bmp", NULL);//load second title image
 	acquire_screen();
-	blit(title,buffer,0,0,0,0,title->w,title->h);
+	blit(intro,buffer,0,0,0,0,title->w,title->h);
 	blit(buffer,screen,0,0,0,0,SCREEN_W-1,SCREEN_H-1);
 	release_screen();
 	printf(".TITLE");	  
