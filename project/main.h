@@ -47,7 +47,7 @@ SPRITE *hotstuff[4];//player projectiles
 SPRITE *lame[4];//enemy projectiles
 SPRITE *enemies[30];//enemies
 BITMAP *buffer;
-int n, i, f, quitgame, gameon, cont, paused, fire, start, enemyFire;
+int n, i, f, quitgame, gameon, cont, paused, cooldown, start, enemyFire;
 
 //timer variables
 volatile int counter;

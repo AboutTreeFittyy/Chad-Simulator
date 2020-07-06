@@ -103,14 +103,23 @@ int collided(SPRITE *first, SPRITE *second, int border) {
 //Check to see if projectile has collided with end of screen or sprite
 void checkPlayerProjectile(){
 	for (n=0; n<NUMENEMIES; n++) {
-		//check for collision and that the enemy is still alive, don't want to shoot ghosts
-		if (collided(hotstuff[0], enemies[n], 20) && enemies[n]->alive && n > 9) {
-			fire=0;//prevents drawing the sprite after hit, which would get it stuck on screen
-			enemies[n]->alive = 0;//make enemy dead
-		}else if (collided(hotstuff[0], enemies[n], 0) && enemies[n]->alive && n <= 9) {
-			fire=0;//prevents drawing the sprite after hit, which would get it stuck on screen
-			enemies[n]->alive = 0;//make enemy dead
-		}//previous else if statements change the hitboxes so they are more accurate
+		for(i = 0; i < 4; i++){//check for collision and that the enemy is still alive, don't want to shoot ghosts
+			if (collided(hotstuff[i], enemies[n], 20) && enemies[n]->alive && n > 9) {
+				enemies[n]->alive = 0;//make enemy dead
+				blit(back, buffer, hotstuff[i]->x, hotstuff[i]->y, hotstuff[i]->x, hotstuff[i]->y, hotstuff[i]->width, hotstuff[i]->height);
+				hotstuff[i]->x = -200;//move off screen
+		    	hotstuff[i]->y = -200;
+		    	hotstuff[i]->yspeed = 0;//stop it
+		    	hotstuff[i]->framedelay = 0;//reset
+			}else if (collided(hotstuff[i], enemies[n], 0) && enemies[n]->alive && n <= 9) {
+				enemies[n]->alive = 0;//make enemy dead
+				blit(back, buffer, hotstuff[i]->x, hotstuff[i]->y, hotstuff[i]->x, hotstuff[i]->y, hotstuff[i]->width, hotstuff[i]->height);
+				hotstuff[i]->x = -200;//move off screen
+		    	hotstuff[i]->y = -200;
+		    	hotstuff[i]->yspeed = 0;//stop it
+		    	hotstuff[i]->framedelay = 0;//reset
+			}//previous else if statements change the hitboxes so they are more accurate
+		}
 	}
 }
 
@@ -241,30 +250,31 @@ void loadsprites(void){
     player[0]->animdir = 0;
     player[0]->startFrame = 0;
     player[0]->alive = 1;    
-	//load chad/player sprites
+	//load hotstuff sprites
     temp = load_bitmap("sprites/hotstuff.bmp", NULL);
     sprite_images[4][0] = grabframe(temp,20,71,0,0,1,0);
     destroy_bitmap(temp);
-    //initialize the chad projectile
-    hotstuff[0] = malloc(sizeof(SPRITE));
-    hotstuff[0]->x = player[0]->x;
-    hotstuff[0]->y = player[0]->y;
-    hotstuff[0]->width = sprite_images[4][0]->w;
-    hotstuff[0]->height = sprite_images[4][0]->h;
-    hotstuff[0]->xdelay = 6;
-    hotstuff[0]->ydelay = 0;
-    hotstuff[0]->xcount = 0;
-    hotstuff[0]->ycount = 0;
-    hotstuff[0]->xspeed = 0;
-    hotstuff[0]->yspeed = -5;
-    hotstuff[0]->curframe = 0;
-    hotstuff[0]->maxframe = 1;
-    hotstuff[0]->framecount = 0;
-    hotstuff[0]->framedelay = 5;
-    hotstuff[0]->animdir = 0;
-    hotstuff[0]->startFrame = 0;
-    hotstuff[0]->alive = 1;    
-    //load chad/player sprites
+    for(i = 0; i < 4; i++){//initialize the chad projectile
+	    hotstuff[i] = malloc(sizeof(SPRITE));
+	    hotstuff[i]->x = -200;
+	    hotstuff[i]->y = -200;
+	    hotstuff[i]->width = sprite_images[4][0]->w;
+	    hotstuff[i]->height = sprite_images[4][0]->h;
+	    hotstuff[i]->xdelay = 6;
+	    hotstuff[i]->ydelay = 0;
+	    hotstuff[i]->xcount = 0;
+	    hotstuff[i]->ycount = 0;
+	    hotstuff[i]->xspeed = 0;
+	    hotstuff[i]->yspeed = 0;
+	    hotstuff[i]->curframe = 0;
+	    hotstuff[i]->maxframe = 1;
+	    hotstuff[i]->framecount = 0;
+	    hotstuff[i]->framedelay = 5;
+	    hotstuff[i]->animdir = 0;
+	    hotstuff[i]->startFrame = 0;
+	    hotstuff[i]->alive = 1;    
+	}
+    //load lame sprites
     temp = load_bitmap("sprites/lame.bmp", NULL);
     sprite_images[5][0] = grabframe(temp,33,67,0,0,1,0);
     destroy_bitmap(temp);
@@ -297,17 +307,6 @@ void checkFire(){
         warpsprite(lame[0]);
 		start = clock();
         enemyFired(rand()%(NUMENEMIES-1));
-	}//Check if player firing
-	if(fire){
-		blit(back, buffer, hotstuff[0]->x, hotstuff[0]->y, hotstuff[0]->x, hotstuff[0]->y, hotstuff[0]->width, hotstuff[0]->height);
-		updatesprite(hotstuff[0]);
-        warpsprite(hotstuff[0]);
-        checkPlayerProjectile();
-        if(hotstuff[0]->y < 5 || !fire){//hit top, reset
-        	fire=0;
-		}else{//dont draw unless still moving
-			draw_sprite(buffer, sprite_images[4][hotstuff[0]->curframe], hotstuff[0]->x, hotstuff[0]->y);
-		}            
 	}
 	//Check if enemy firing
 	if(enemyFire){
@@ -321,6 +320,32 @@ void checkFire(){
 			draw_sprite(buffer, sprite_images[5][lame[0]->curframe], lame[0]->x, lame[0]->y);
 		}            
 	}
+	//Check if need to delete a projectile
+	for(i = 0; i < 4; i++){//make sure max number of projectiles not fired already on screen
+		if(hotstuff[i]->yspeed != 0 && clock() >= hotstuff[i]->framedelay + 4000){
+	        hotstuff[i]->x = -200;//move off screen
+	    	hotstuff[i]->y = -200;
+	    	hotstuff[i]->yspeed = 0;//stop it
+	    	hotstuff[i]->framedelay = 0;//reset
+		}
+	}
+	//update player projectiles    
+    for(i = 0; i < 4; i++){
+    	if(hotstuff[i]->yspeed != 0){//only need to draw ones that are currently fired
+			blit(back, buffer, hotstuff[i]->x, hotstuff[i]->y, hotstuff[i]->x, hotstuff[i]->y, hotstuff[i]->width, hotstuff[i]->height);
+			updatesprite(hotstuff[i]);
+	        warpsprite(hotstuff[i]);
+	        draw_sprite(buffer, sprite_images[4][hotstuff[i]->curframe], hotstuff[i]->x, hotstuff[i]->y);
+	    }
+	    if(hotstuff[i]->y < 5){//delete projectile if it hits top
+	    	blit(back, buffer, hotstuff[i]->x, hotstuff[i]->y, hotstuff[i]->x, hotstuff[i]->y, hotstuff[i]->width, hotstuff[i]->height);
+			hotstuff[i]->x = -200;//move off screen
+	    	hotstuff[i]->y = -200;
+	    	hotstuff[i]->yspeed = 0;//stop it
+	    	hotstuff[i]->framedelay = 0;//reset
+		}
+	}
+	checkPlayerProjectile();//check for collisions to handle
 }
 
 void updateGame(){
@@ -398,16 +423,22 @@ void getinput(){
 	        player[0]->xspeed = CHADSPEED;
 	        playAnim(player[0], 4, 7);
 	    }//Flex/Fire
-	    else if (key[KEY_W] && !fire){
-	        player[0]->xspeed = 0;
-	        playAnim(player[0], 8, 15);
-	        fire=1;
-	        hotstuff[0]->x = player[0]->x;
-	    	hotstuff[0]->y = player[0]->y;
+	    else if (key[KEY_W]){
+	        for(i = 0; i < 4; i++){//make sure max number of projectiles not fired already on screen
+				if(hotstuff[i]->yspeed == 0 && clock() > cooldown){
+					cooldown = clock() + 1000;
+					player[0]->xspeed = 0;
+			        playAnim(player[0], 8, 15);
+			        hotstuff[i]->x = player[0]->x+(player[0]->width/2);//center on player
+			    	hotstuff[i]->y = player[0]->y;
+			    	hotstuff[i]->yspeed = -5;//have it travel up now
+			    	hotstuff[i]->framedelay = clock();//unused variable for this, use to track time it was sent
+				}
+			}
 	    }//Reserved in case more needed
 	    else if (key[KEY_S]){
 	        
-	    }else if (key[KEY_P] || key[KEY_H]){//checks for P press
+	    }else if (key[KEY_P] || key[KEY_H]){//checks for P/H press
 	        if(key_shifts & KB_CTRL_FLAG){//checks if ctrl is held too
 				if(paused){
 		        	paused = 0; //UnPause
@@ -423,7 +454,7 @@ void getinput(){
 	else{//Title screen so check for SPACE bar to begin
 		if (key[KEY_SPACE]){//Start a new game
 	        if(!cont){
-				gameon = 0, paused = 0, fire = 0, enemyFire = 0;//Initialize the games global variables for a new session	        
+				gameon = 0, paused = 0, enemyFire = 0;//Initialize the games global variables for a new session	        
 			    back = load_bitmap("bgbeach.bmp", NULL);//load and draw the blocks
 			    blit(back,buffer,0,0,0,0,back->w,back->h);		    
 			    loadsprites();//load and set up sprites
@@ -490,7 +521,7 @@ int main(void){
         allegro_message(allegro_error);
         return;
     }
-	quitgame = 0, cont = 1, gameon = 1;
+	quitgame = 0, cont = 1, gameon = 1, cooldown = 0;
     //create double buffer
     buffer = create_bitmap(SCREEN_W,SCREEN_H);
 	//Display title screen
