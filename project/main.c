@@ -139,7 +139,7 @@ void enemyFired(int enemyNum){
 //Loads the sprites into their struct from their bitmap files
 void loadsprites(void){   
 	//load fat sprite
-    temp = load_bitmap("WALK_RIGHT.bmp", NULL);
+    temp = load_bitmap("sprites/WALK_RIGHT.bmp", NULL);
     for (n=0; n<9; n++){
 		sprite_images[0][n] = grabframe(temp,36,64,0,0,9,n);
     }
@@ -166,7 +166,7 @@ void loadsprites(void){
 	    enemies[n]->alive = 1;
 	}
     //load obese cartwheel sprite
-    temp = load_bitmap("CW_RIGHT.bmp", NULL);
+    temp = load_bitmap("sprites/CW_RIGHT.bmp", NULL);
     for (n=0; n<20; n++)
         sprite_images[1][n] = grabframe(temp,88,85,0,0,4,n);
     destroy_bitmap(temp);
@@ -192,7 +192,7 @@ void loadsprites(void){
 	    enemies[n]->alive = 1;
 	}
     //load vlad sprite
-    temp = load_bitmap("vlad.bmp", NULL);
+    temp = load_bitmap("sprites/vlad.bmp", NULL);
     for (n=0; n<8; n++)
         sprite_images[2][n] = grabframe(temp,64,96,0,0,4,n);
     destroy_bitmap(temp);
@@ -218,7 +218,7 @@ void loadsprites(void){
 	    enemies[n]->alive = 1;
 	}
 	//load chad/player sprites
-    temp = load_bitmap("chadsprite.bmp", NULL);
+    temp = load_bitmap("sprites/chadsprite.bmp", NULL);
     for (n=0; n<16; n++)
         sprite_images[3][n] = grabframe(temp,64,96,0,0,4,n);
     destroy_bitmap(temp);
@@ -242,7 +242,7 @@ void loadsprites(void){
     player[0]->startFrame = 0;
     player[0]->alive = 1;    
 	//load chad/player sprites
-    temp = load_bitmap("hotstuff.bmp", NULL);
+    temp = load_bitmap("sprites/hotstuff.bmp", NULL);
     sprite_images[4][0] = grabframe(temp,20,71,0,0,1,0);
     destroy_bitmap(temp);
     //initialize the chad projectile
@@ -265,7 +265,7 @@ void loadsprites(void){
     hotstuff[0]->startFrame = 0;
     hotstuff[0]->alive = 1;    
     //load chad/player sprites
-    temp = load_bitmap("lame.bmp", NULL);
+    temp = load_bitmap("sprites/lame.bmp", NULL);
     sprite_images[5][0] = grabframe(temp,33,67,0,0,1,0);
     destroy_bitmap(temp);
     //initialize the lame projectile
@@ -446,20 +446,26 @@ void runGame(){
 			}
 	        checkFire();//Operates and maintains the firing function for player and enemy projectiles
 		}
-		//update ticks        
-		//ticks++;
         rest_callback(15, rest1);//This controls the speed of the game (frame rate)        
         //update the screen
         acquire_screen();
         blit(buffer,screen,0,0,0,0,SCREEN_W-1,SCREEN_H-1);
         release_screen();
     }
-    //Return to the title screen
-    destroy();//First clean up environment
-			//Now bring back the title screen
+	acquire_screen();//Now bring back the title screen
+	blit(title,buffer,0,0,0,0,title->w,title->h);
+	blit(buffer,screen,0,0,0,0,SCREEN_W-1,SCREEN_H-1);
+	release_screen();		
 	printf(".RETURN-TITLE");
 }
 
+/*
+How to implement multiple bullets:
+determine firing speed wished
+determine time it takes for one bullet to travel entire screen
+figure out how many bullets could be fired at that speed before one hit the top
+make that (possibly plus one) bullet sprites with a timer to spread them out and a counter to keep track of the next sprite to use in order
+*/
 
 //Main function, initializes program environment, runs game routine until quit (destroy function called elsewhere for most cleanup)
 int main(void){
@@ -477,13 +483,13 @@ int main(void){
     }
 	quitgame = 0, gameon = 1;
     //create double buffer
-    buffer = create_bitmap(SCREEN_W,SCREEN_H);    
-	//lock interrupt variables
-    //LOCK_VARIABLE(rested);
-    //LOCK_FUNCTION(rest1);
+    buffer = create_bitmap(SCREEN_W,SCREEN_H);
 	//Display title screen
-	title = load_bitmap("title_screen.bmp", NULL);//load and draw the blocks
+	title = load_bitmap("sprites/start_screen.bmp", NULL);//load and draw the blocks
+	acquire_screen();
 	blit(title,buffer,0,0,0,0,title->w,title->h);
+	blit(buffer,screen,0,0,0,0,SCREEN_W-1,SCREEN_H-1);
+	release_screen();
 	printf(".TITLE");	  
 	while(!quitgame){
 		//Check for input to either quit completely or to start a game
@@ -492,6 +498,8 @@ int main(void){
 		}
 		rest(50);
 	} 
+	printf(".DESTROYING");
+	destroy();
 	printf(".ENDED.");
     allegro_exit();
 	return 0;        
