@@ -39,6 +39,7 @@ typedef struct SPRITE{
 BITMAP *back;
 BITMAP *intro;
 BITMAP *title;
+BITMAP *victory;
 BITMAP *pause;
 BITMAP *temp;
 BITMAP *sprite_images[10][20];//This limits max frames
@@ -47,7 +48,7 @@ SPRITE *hotstuff[4];//player projectiles
 SPRITE *lame[4];//enemy projectiles
 SPRITE *enemies[30];//enemies
 BITMAP *buffer;
-int c, n, i, f, j, quitgame, gameon, cont, paused, cooldown, start, enemyProjectiles;
+int c, n, i, f, j, gamewin, quitgame, gameon, cont, paused, cooldown, start, enemyProjectiles;
 
 //timer variables
 volatile int counter;

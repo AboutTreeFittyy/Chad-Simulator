@@ -473,13 +473,13 @@ void getinput(){
 	    	player[0]->animdir = 0; //stop playing animation
 			player[0]->xspeed = 0;//stop moving, nothing pressed
 		}
-	}
-	else{//Title screen so check for SPACE bar to begin
+	}else if(gamewin){
+		gamewin=0;
+	}else{//Title screen so check for SPACE bar to begin
 		if (key[KEY_SPACE]){//Start a new game
 	        if(!cont){
-				gameon = 0, paused = 0;//Initialize the games global variables for a new session	        
+				gameon = 0, gamewin = 0, paused = 0;//Initialize the games global variables for a new session	        
 			    back = load_bitmap("bgbeach.bmp", NULL);//load and draw the blocks
-			    start = clock();//init the enemy firing timer
 			    blit(back,buffer,0,0,0,0,back->w,back->h);		    
 			    loadsprites();//load and set up sprites
 			    printf(".STARTING-GAME");
@@ -496,6 +496,24 @@ void getinput(){
 	}
 }
 
+void winGame(){
+	//create winning screen
+	
+	/*NEED TO ADD CODE HERE TO HANDLE SCORE SELECTED BITMAP ONCE SCORE IMPLEMENTED*/
+	
+	victory = load_bitmap("victory_screens/11.bmp", NULL);//load
+	acquire_screen();
+	blit(victory,buffer,0,0,0,0,title->w,title->h);
+	blit(buffer,screen,0,0,0,0,SCREEN_W-1,SCREEN_H-1);
+	release_screen();
+	//cont = 1;
+	while(gamewin){//create victory screeen and end game
+		if (keypressed()){
+	    	getinput();//wait for spacebar to continue
+		}		        	
+	}				
+}
+
 void runGame(){
 	//game loop
     while (!gameon){
@@ -504,12 +522,22 @@ void runGame(){
         	getinput();
 		}		
 		if(!paused){		
-			updateGame();			
+			updateGame();
+			for(i = 0; i < NUMENEMIES; i++){//Check if game won
+				if(enemies[i]->alive == 1){
+					i = NUMENEMIES; //Found alive enemy so dont waster resources checking the rest
+				}else if(i == NUMENEMIES - 1){
+					gamewin = 1; //i can only equal NUMENEMIES - 1 if all enemies have been scanned and dead
+					gameon=0;
+					winGame();
+				}
+			}			
 			if(!player[0]->alive){//check if player has died
 				gameon = 1;
-				cont = 1;
+				//cont = 1;
 			}
 	        checkFire();//Operates and maintains the firing function for player and enemy projectiles
+		    
 		}
         rest_callback(15, rest1);//This controls the speed of the game (frame rate)        
         //update the screen
@@ -538,7 +566,7 @@ int main(void){
         allegro_message(allegro_error);
         return;
     }
-	quitgame = 0, cont = 1, gameon = 1, cooldown = 0, enemyProjectiles = 4;
+	quitgame = 0, cont = 1, gamewin = 0, gameon = 1, cooldown = 0, enemyProjectiles = 4;
     //create double buffer
     buffer = create_bitmap(SCREEN_W,SCREEN_H);
 	//Display title screen
