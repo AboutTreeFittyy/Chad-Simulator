@@ -82,7 +82,8 @@ int collided(SPRITE *first, SPRITE *second, int border) {
 	//get width/height of both sprites 
 	int width1 = first->x + first->width; 
 	int height1 = first->y + first->height;
-	int width2 = second->x + second->width; int height2 = second->y + second->height;
+	int width2 = second->x + second->width; 
+	int height2 = second->y + second->height;
 	//see if corners of first are inside second boundary 
 	if (inside(first->x, first->y, second->x + border, second->y + border, width2 - border, height2 - border)){
 		return 1;
@@ -96,52 +97,55 @@ int collided(SPRITE *first, SPRITE *second, int border) {
 	if (inside(width1, height1, second->x + border, second->y + border, width2 - border, height2 - border)){
 		return 1;
 	}
-	//no collisions? r
-	return 0;
+	return 0;//no collision return 0
 }
 
 //Check to see if projectile has collided with end of screen or sprite
 void checkPlayerProjectile(){
 	for (n=0; n<NUMENEMIES; n++) {
-		for(i = 0; i < 4; i++){//check for collision and that the enemy is still alive, don't want to shoot ghosts
-			if (collided(hotstuff[i], enemies[n], 20) && enemies[n]->alive && n > 9) {
+		for(c = 0; c < 4; c++){//check for collision and that the enemy is still alive, don't want to shoot ghosts
+			//printf("INDEX: %d", i);
+			if (collided(hotstuff[c], enemies[n], 20) && enemies[n]->alive && n > 9) {
 				enemies[n]->alive = 0;//make enemy dead
-				blit(back, buffer, hotstuff[i]->x, hotstuff[i]->y, hotstuff[i]->x, hotstuff[i]->y, hotstuff[i]->width, hotstuff[i]->height);
-				hotstuff[i]->x = -200;//move off screen
-		    	hotstuff[i]->y = -200;
-		    	hotstuff[i]->yspeed = 0;//stop it
-		    	hotstuff[i]->framedelay = 0;//reset
-			}else if (collided(hotstuff[i], enemies[n], 0) && enemies[n]->alive && n <= 9) {
+				blit(back, buffer, hotstuff[c]->x, hotstuff[c]->y, hotstuff[c]->x, hotstuff[c]->y, hotstuff[c]->width, hotstuff[c]->height);
+				hotstuff[c]->x = -200;//move off screen
+		    	hotstuff[c]->y = -200;
+		    	hotstuff[c]->yspeed = 0;//stop it
+		    	hotstuff[c]->framedelay = 0;//reset
+			}else if (collided(hotstuff[c], enemies[n], 0) && enemies[n]->alive && n <= 9) {
 				enemies[n]->alive = 0;//make enemy dead
-				blit(back, buffer, hotstuff[i]->x, hotstuff[i]->y, hotstuff[i]->x, hotstuff[i]->y, hotstuff[i]->width, hotstuff[i]->height);
-				hotstuff[i]->x = -200;//move off screen
-		    	hotstuff[i]->y = -200;
-		    	hotstuff[i]->yspeed = 0;//stop it
-		    	hotstuff[i]->framedelay = 0;//reset
+				blit(back, buffer, hotstuff[c]->x, hotstuff[c]->y, hotstuff[c]->x, hotstuff[c]->y, hotstuff[c]->width, hotstuff[c]->height);
+				hotstuff[c]->x = -200;//move off screen
+		    	hotstuff[c]->y = -200;
+		    	hotstuff[c]->yspeed = 0;//stop it
+		    	hotstuff[c]->framedelay = 0;//reset
 			}//previous else if statements change the hitboxes so they are more accurate
+			//The following is used to detect when an enemy makes it to the bottom
+			if(enemies[n]->y > 750){
+				player[0]->alive = 0;//kill player
+			}
 		}
 	}
 }
 
 void checkEnemyProjectile(){
-	for (n=0; n<NUMPLAYERSPRITES; n++) {
-		//check for collision and that the enemy is still alive, don't want to shoot ghosts
-		if (collided(lame[0], player[n], 0)) {
-			enemyFire=0;//prevents drawing the sprite after hit, which would get it stuck on screen
-			player[n]->alive = 0;//make enemy dead
+	for(i = 0; i < enemyProjectiles; i++){//check for collision and that the enemy is still alive, don't want to shoot ghosts
+		if (collided(lame[i], player[0], 0)) {
+			player[0]->alive = 0;//make player dead
 		}
 	}
 }
 
 //Tries to make an enemy fire, calls itself recursively if enemy given is dead
-void enemyFired(int enemyNum){
+void enemyFired(int enemyNum, int index){
 	if(enemies[enemyNum]->alive){
-		lame[0]->x=enemies[enemyNum]->x;
-		lame[0]->y=enemies[enemyNum]->y;
-		enemyFire=1;
+		printf("enemy: %d -- dropping: %d - X\n", enemyNum, enemies[enemyNum]->x+(enemies[enemyNum]->width/2));
+		lame[index]->x=enemies[enemyNum]->x+(enemies[enemyNum]->width/2);
+		lame[index]->y=enemies[enemyNum]->y;//+enemies[enemyNum]->height;
+		lame[index]->yspeed = 5;
 	}
 	else{
-		enemyFired(rand()%(NUMENEMIES-1));
+		enemyFired(rand()%(NUMENEMIES-1), index);
 	}
 }
 
@@ -278,47 +282,66 @@ void loadsprites(void){
     temp = load_bitmap("sprites/lame.bmp", NULL);
     sprite_images[5][0] = grabframe(temp,33,67,0,0,1,0);
     destroy_bitmap(temp);
-    //initialize the lame projectile
-    lame[0] = malloc(sizeof(SPRITE));
-    lame[0]->x = 0;
-    lame[0]->y = 0;
-    lame[0]->width = sprite_images[5][0]->w;
-    lame[0]->height = sprite_images[5][0]->h;
-    lame[0]->xdelay = 6;
-    lame[0]->ydelay = 0;
-    lame[0]->xcount = 0;
-    lame[0]->ycount = 0;
-    lame[0]->xspeed = 0;
-    lame[0]->yspeed = 5;
-    lame[0]->curframe = 0;
-    lame[0]->maxframe = 1;
-    lame[0]->framecount = 0;
-    lame[0]->framedelay = 5;
-    lame[0]->animdir = 0;
-    lame[0]->startFrame = 0;
-    lame[0]->alive = 1;
+    for(i=0; i<enemyProjectiles; i++){
+	    //initialize the lame projectile
+	    lame[i] = malloc(sizeof(SPRITE));
+	    if(lame[i] == NULL){
+	    	printf("MEMORY_FAILURE");
+	    	exit(1);
+		}
+	    lame[i]->x = -200;
+	    lame[i]->y = -200;
+	    lame[i]->width = sprite_images[5][0]->w;
+	    lame[i]->height = sprite_images[5][0]->h;
+	    lame[i]->xdelay = 6;
+	    lame[i]->ydelay = 0;
+	    lame[i]->xcount = 0;
+	    lame[i]->ycount = 0;
+	    lame[i]->xspeed = 0;
+	    lame[i]->yspeed = 0;
+	    
+	    lame[i]->curframe = 0;
+	    lame[i]->maxframe = 1;
+	    lame[i]->framecount = 0;
+	    lame[i]->framedelay = 5;
+	    lame[i]->animdir = 0;
+	    lame[i]->startFrame = 0;
+	    lame[i]->alive = 1;
+	}
 }
 
 void checkFire(){
 	//check if an enemy should fire
-	if (clock() > start + 4000){
-        blit(back, buffer, lame[0]->x, lame[0]->y, lame[0]->x, lame[0]->y, lame[0]->width, lame[0]->height);
-		updatesprite(lame[0]);
-        warpsprite(lame[0]);
-		start = clock();
-        enemyFired(rand()%(NUMENEMIES-1));
+	if (clock() > start + 850){//be careful with this timing (850 for 4), its synced with the number of projectiles to make the random aspect work
+        for(i = 0; i < enemyProjectiles; i++){        	
+        	if(lame[i]->yspeed == 0){//only fire what isnt already in use
+        		blit(back, buffer, lame[i]->x, lame[i]->y, lame[i]->x, lame[i]->y, lame[i]->width, lame[i]->height);
+				updatesprite(lame[i]);
+		        warpsprite(lame[i]);
+				srand(time(NULL));
+				f = rand()%(NUMENEMIES-1);
+				printf("-%d", rand()%(NUMENEMIES-1));					
+		        enemyFired(f, i);
+        		i = enemyProjectiles;//make sure this loop dies after firing
+			}	
+		}	
+		start = clock();	
 	}
-	//Check if enemy firing
-	if(enemyFire){
-		blit(back, buffer, lame[0]->x, lame[0]->y, lame[0]->x, lame[0]->y, lame[0]->width, lame[0]->height);
-		updatesprite(lame[0]);
-        warpsprite(lame[0]);
-        checkEnemyProjectile();
-        if(lame[0]->y > 900 || !enemyFire){//hit bottom, reset
-        	enemyFire=0;
-		}else{//dont draw unless still moving
-			draw_sprite(buffer, sprite_images[5][lame[0]->curframe], lame[0]->x, lame[0]->y);
-		}            
+	for(j = 0; j < enemyProjectiles; j++){//Check/update projectiles currently fired
+		if(lame[j]->yspeed != 0){
+			blit(back, buffer, lame[j]->x, lame[j]->y, lame[j]->x, lame[j]->y, lame[j]->width, lame[j]->height);
+			updatesprite(lame[j]);
+	        warpsprite(lame[j]);
+	        checkEnemyProjectile();
+	        if(lame[j]->y >= 830){//hit bottom, reset
+				blit(back, buffer, lame[j]->x, lame[j]->y, lame[j]->x, lame[j]->y, lame[j]->width, lame[j]->height);
+				lame[j]->x = -200;//move off screen
+		    	lame[j]->y = -200;
+		    	lame[j]->yspeed = 0;//stop it
+			}else{//dont draw unless still moving
+				draw_sprite(buffer, sprite_images[5][lame[j]->curframe], lame[j]->x, lame[j]->y);
+			}           
+		}
 	}
 	//Check if need to delete a projectile
 	for(i = 0; i < 4; i++){//make sure max number of projectiles not fired already on screen
@@ -454,8 +477,9 @@ void getinput(){
 	else{//Title screen so check for SPACE bar to begin
 		if (key[KEY_SPACE]){//Start a new game
 	        if(!cont){
-				gameon = 0, paused = 0, enemyFire = 0;//Initialize the games global variables for a new session	        
+				gameon = 0, paused = 0;//Initialize the games global variables for a new session	        
 			    back = load_bitmap("bgbeach.bmp", NULL);//load and draw the blocks
+			    start = clock();//init the enemy firing timer
 			    blit(back,buffer,0,0,0,0,back->w,back->h);		    
 			    loadsprites();//load and set up sprites
 			    printf(".STARTING-GAME");
@@ -482,7 +506,8 @@ void runGame(){
 		if(!paused){		
 			updateGame();			
 			if(!player[0]->alive){//check if player has died
-				gameon=1;
+				gameon = 1;
+				cont = 1;
 			}
 	        checkFire();//Operates and maintains the firing function for player and enemy projectiles
 		}
@@ -499,21 +524,13 @@ void runGame(){
 	printf(".RETURN-TITLE");
 }
 
-/*
-How to implement multiple bullets:
-determine firing speed wished
-determine time it takes for one bullet to travel entire screen
-figure out how many bullets could be fired at that speed before one hit the top
-make that (possibly plus one) bullet sprites with a timer to spread them out and a counter to keep track of the next sprite to use in order
-*/
-
 //Main function, initializes program environment, runs game routine until quit (destroy function called elsewhere for most cleanup)
 int main(void){
     //initialize
     allegro_init();
     set_color_depth(16);
     set_gfx_mode(MODE, WIDTH, HEIGHT, 0, 0);
-    srand(time(NULL));
+    
     install_keyboard();
     install_timer();
     int ret = set_gfx_mode(MODE, WIDTH, HEIGHT, 0, 0);
@@ -521,7 +538,7 @@ int main(void){
         allegro_message(allegro_error);
         return;
     }
-	quitgame = 0, cont = 1, gameon = 1, cooldown = 0;
+	quitgame = 0, cont = 1, gameon = 1, cooldown = 0, enemyProjectiles = 4;
     //create double buffer
     buffer = create_bitmap(SCREEN_W,SCREEN_H);
 	//Display title screen
