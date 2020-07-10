@@ -19,6 +19,7 @@
 #define NUMENEMIES 30
 #define NUMTOTALSPRITES 5
 #define CHADSPEED 15
+#define ENEMYPOINTS 100
 #define BLACK makecol(0,0,0)
 #define WHITE makecol(255,255,255)
 
@@ -48,12 +49,10 @@ SPRITE *hotstuff[4];//player projectiles
 SPRITE *lame[4];//enemy projectiles
 SPRITE *enemies[30];//enemies
 BITMAP *buffer;
-int c, n, i, f, j, gamewin, quitgame, gameon, cont, paused, cooldown, start, enemyProjectiles;
-
+int c, n, i, f, j, gamewin, quitgame, gameon, cont, paused, score, starttime, cooldown, start, enemyProjectiles;
+FONT *elfboy;
+PALETTE palette;
 //timer variables
-volatile int counter;
-volatile int ticks;
-volatile int framerate;
 volatile int resting, rested;
 
 void runGame();

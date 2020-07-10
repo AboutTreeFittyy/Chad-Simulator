@@ -60,7 +60,6 @@ void warpsprite(SPRITE *spr){
     }
 }
 
-//reuse our friendly tile grabber from chapter 9
 BITMAP *grabframe(BITMAP *source, int width, int height,int startx, int starty, int columns, int frame){
 	BITMAP *temp = create_bitmap(width,height);
     int x = startx + (frame % columns) * width;
@@ -69,6 +68,7 @@ BITMAP *grabframe(BITMAP *source, int width, int height,int startx, int starty, 
     return temp;
 }
 
+//checks if coordinates are inside a given hitbox, return 1 if inside
 int inside(int x,int y,int left,int top,int right,int bottom) {
 	if (x > left && x < right && y > top && y < bottom){
 		return 1;
@@ -112,6 +112,7 @@ void checkPlayerProjectile(){
 		    	hotstuff[c]->y = -200;
 		    	hotstuff[c]->yspeed = 0;//stop it
 		    	hotstuff[c]->framedelay = 0;//reset
+		    	score += ENEMYPOINTS;
 			}else if (collided(hotstuff[c], enemies[n], 0) && enemies[n]->alive && n <= 9) {
 				enemies[n]->alive = 0;//make enemy dead
 				blit(back, buffer, hotstuff[c]->x, hotstuff[c]->y, hotstuff[c]->x, hotstuff[c]->y, hotstuff[c]->width, hotstuff[c]->height);
@@ -119,6 +120,7 @@ void checkPlayerProjectile(){
 		    	hotstuff[c]->y = -200;
 		    	hotstuff[c]->yspeed = 0;//stop it
 		    	hotstuff[c]->framedelay = 0;//reset
+		    	score += ENEMYPOINTS;
 			}//previous else if statements change the hitboxes so they are more accurate
 			//The following is used to detect when an enemy makes it to the bottom
 			if(enemies[n]->y > 750){
@@ -128,8 +130,9 @@ void checkPlayerProjectile(){
 	}
 }
 
+//Checks the enemies projectiles to see if any collided with player
 void checkEnemyProjectile(){
-	for(i = 0; i < enemyProjectiles; i++){//check for collision and that the enemy is still alive, don't want to shoot ghosts
+	for(i = 0; i < enemyProjectiles; i++){//check for collision with player
 		if (collided(lame[i], player[0], 0)) {
 			player[0]->alive = 0;//make player dead
 		}
@@ -139,7 +142,7 @@ void checkEnemyProjectile(){
 //Tries to make an enemy fire, calls itself recursively if enemy given is dead
 void enemyFired(int enemyNum, int index){
 	if(enemies[enemyNum]->alive){
-		printf("enemy: %d -- dropping: %d - X\n", enemyNum, enemies[enemyNum]->x+(enemies[enemyNum]->width/2));
+		//printf("enemy: %d -- dropping: %d - X\n", enemyNum, enemies[enemyNum]->x+(enemies[enemyNum]->width/2));//test code for enemy fire, checks position and enemy found to see if randomness works
 		lame[index]->x=enemies[enemyNum]->x+(enemies[enemyNum]->width/2);
 		lame[index]->y=enemies[enemyNum]->y;//+enemies[enemyNum]->height;
 		lame[index]->yspeed = 5;
@@ -320,7 +323,7 @@ void checkFire(){
 		        warpsprite(lame[i]);
 				srand(time(NULL));
 				f = rand()%(NUMENEMIES-1);
-				printf("-%d", rand()%(NUMENEMIES-1));					
+				//printf("-%d", rand()%(NUMENEMIES-1));					
 		        enemyFired(f, i);
         		i = enemyProjectiles;//make sure this loop dies after firing
 			}	
@@ -372,6 +375,10 @@ void checkFire(){
 }
 
 void updateGame(){
+	//Update score
+	blit(back, buffer, 0, 0, 0, 0, 100, 50);//clear previous time/score
+	textprintf_centre_ex(buffer,font,50,20,WHITE,-1,"TIME: %d", (clock()-starttime)/1000);//print time since start in seconds
+    textprintf_centre_ex(buffer,font,50,40,WHITE,-1,"SCORE: %d", score);//print current score
 	//restore the background from regular sprites
     for (n=0; n<NUMPLAYERSPRITES; n++){
     	blit(back, buffer, player[n]->x, player[n]->y, player[n]->x, player[n]->y, player[n]->width, player[n]->height);
@@ -401,6 +408,7 @@ void updateGame(){
 			}				
         }
 	}
+	
 }
 
 //Deallocates memory used in game
@@ -408,20 +416,24 @@ int destroy(){
 	//remove objects from memory
     destroy_bitmap(back);
     destroy_bitmap(buffer);
+    //printf("1");
 	for(i=0;i<3;i++){
         for (f=0; f<enemies[i*10]->maxframe+1; f++){
 			destroy_bitmap(sprite_images[i][f]);
 		}
 	}
+	//printf("2");
 	for(i=0;i<NUMENEMIES;i++){
-		free(enemies[n]);
+		free(enemies[i]);
 	}
+	//printf("3");
     for (n=0; n<1; n++){
         for (f=0; f<player[n]->maxframe+1; f++){
 			destroy_bitmap(sprite_images[3][f]);
 		}
         free(player[n]);
-    }    
+    }  
+	//printf("4");  
     return 0;
 }
 
@@ -483,7 +495,7 @@ void getinput(){
 	}else{//Title screen so check for SPACE bar to begin
 		if (key[KEY_SPACE]){//Start a new game
 	        if(!cont){
-				gameon = 0, gamewin = 0, paused = 0;//Initialize the games global variables for a new session	 			    
+				score = 0, starttime = clock(), gameon = 0, gamewin = 0, paused = 0;//Initialize the games global variables for a new session	 			    
 			    blit(back,buffer,0,0,0,0,back->w,back->h);	//draw the game background	    
 			    loadsprites();//load and set up sprites
 			    printf(".STARTING-GAME");
@@ -572,6 +584,9 @@ int main(void){
         return;
     }
 	quitgame = 0, cont = 1, gamewin = 0, gameon = 1, cooldown = 0, enemyProjectiles = 4;
+	//elfboy = load_font("Elfboyclassic.pcx", palette, NULL);
+	// if (!elfboy)
+    //    printf("NOOOOOOOOO");
     //create double buffer
     buffer = create_bitmap(SCREEN_W,SCREEN_H);
 	//Display title screen
