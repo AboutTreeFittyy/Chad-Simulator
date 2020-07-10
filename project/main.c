@@ -465,9 +465,14 @@ void getinput(){
 	        if(key_shifts & KB_CTRL_FLAG){//checks if ctrl is held too
 				if(paused){
 		        	paused = 0; //UnPause
+		        	blit(back,buffer,0,0,0,0,back->w,back->h);	//draw the game background	 
 				}else{
 					paused = 1; //Pause
+			    	acquire_screen();
+					blit(pause,buffer,-50,-50,0,0,title->w,title->h);
+					release_screen();
 				}
+				rest(500);//add delay so that it doesn't pause and unpause from keyboard input stream (I wish the API had a KEY_UP setting)
 			}
 	    }else{
 	    	player[0]->animdir = 0; //stop playing animation
@@ -478,9 +483,8 @@ void getinput(){
 	}else{//Title screen so check for SPACE bar to begin
 		if (key[KEY_SPACE]){//Start a new game
 	        if(!cont){
-				gameon = 0, gamewin = 0, paused = 0;//Initialize the games global variables for a new session	        
-			    back = load_bitmap("bgbeach.bmp", NULL);//load and draw the blocks
-			    blit(back,buffer,0,0,0,0,back->w,back->h);		    
+				gameon = 0, gamewin = 0, paused = 0;//Initialize the games global variables for a new session	 			    
+			    blit(back,buffer,0,0,0,0,back->w,back->h);	//draw the game background	    
 			    loadsprites();//load and set up sprites
 			    printf(".STARTING-GAME");
 		        runGame(); //Run the game,
@@ -491,6 +495,7 @@ void getinput(){
 				blit(title,buffer,0,0,0,0,title->w,title->h);
 				blit(buffer,screen,0,0,0,0,SCREEN_W-1,SCREEN_H-1);
 				release_screen();
+				rest(250);//add delay so that it doesn't count 2 space presses and skip this screen
 			}
 	    }
 	}
@@ -570,8 +575,10 @@ int main(void){
     //create double buffer
     buffer = create_bitmap(SCREEN_W,SCREEN_H);
 	//Display title screen
-	intro = load_bitmap("sprites/intro_screen.bmp", NULL);//load first title image
-	title = load_bitmap("sprites/title_screen.bmp", NULL);//load second title image
+	intro = load_bitmap("backgrounds/intro_screen.bmp", NULL);//load first title image
+	title = load_bitmap("backgrounds/title_screen.bmp", NULL);//load second title image
+	back = load_bitmap("backgrounds/bgbeach.bmp", NULL);//Load games background
+	pause = load_bitmap("backgrounds/pause_screen.bmp", NULL);//Load pause screen
 	acquire_screen();
 	blit(intro,buffer,0,0,0,0,title->w,title->h);
 	blit(buffer,screen,0,0,0,0,SCREEN_W-1,SCREEN_H-1);
