@@ -42,6 +42,7 @@ BITMAP *intro;
 BITMAP *title;
 BITMAP *victory;
 BITMAP *pause;
+BITMAP *tp;
 BITMAP *temp;
 BITMAP *sprite_images[10][20];//This limits max frames
 SPRITE *player[4];//player sprites
@@ -49,9 +50,9 @@ SPRITE *hotstuff[4];//player projectiles
 SPRITE *lame[4];//enemy projectiles
 SPRITE *enemies[30];//enemies
 BITMAP *buffer;
-int c, n, i, f, j, gamewin, quitgame, gameon, cont, paused, score, starttime, cooldown, start, enemyProjectiles;
-FONT *elfboy;
-PALETTE palette;
+char * vicnum;
+char * vicpath;
+int c, n, i, f, j, gamewin, quitgame, gameon, cont, paused, score, starttime, endtime, cooldown, start, enemyProjectiles;
 //timer variables
 volatile int resting, rested;
 

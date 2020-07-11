@@ -123,7 +123,7 @@ void checkPlayerProjectile(){
 		    	score += ENEMYPOINTS;
 			}//previous else if statements change the hitboxes so they are more accurate
 			//The following is used to detect when an enemy makes it to the bottom
-			if(enemies[n]->y > 750){
+			if(enemies[n]->y > 650){
 				player[0]->alive = 0;//kill player
 			}
 		}
@@ -134,7 +134,7 @@ void checkPlayerProjectile(){
 void checkEnemyProjectile(){
 	for(i = 0; i < enemyProjectiles; i++){//check for collision with player
 		if (collided(lame[i], player[0], 0)) {
-			player[0]->alive = 0;//make player dead
+		//	player[0]->alive = 0;//make player dead
 		}
 	}
 }
@@ -376,9 +376,14 @@ void checkFire(){
 
 void updateGame(){
 	//Update score
+	/*blit(back, buffer, 0, 0, 0, 0, 100, 50);//clear previous time/score
+	textprintf_centre_ex(buffer,font,50,20,WHITE,-1,"TIME: %d", (clock()-starttime)/1000);//print time since start in seconds
+    textprintf_centre_ex(buffer,font,50,40,WHITE,-1,"SCORE: %d", score);//print current score
+	*/
 	blit(back, buffer, 0, 0, 0, 0, 100, 50);//clear previous time/score
 	textprintf_centre_ex(buffer,font,50,20,WHITE,-1,"TIME: %d", (clock()-starttime)/1000);//print time since start in seconds
     textprintf_centre_ex(buffer,font,50,40,WHITE,-1,"SCORE: %d", score);//print current score
+    //stretch_blit(buffer, screen, 0, 0, 150, 150, 0, 0, 300, 300);
 	//restore the background from regular sprites
     for (n=0; n<NUMPLAYERSPRITES; n++){
     	blit(back, buffer, player[n]->x, player[n]->y, player[n]->x, player[n]->y, player[n]->width, player[n]->height);
@@ -439,7 +444,7 @@ int destroy(){
 
 //Exits game when ESC key pressed
 void getinput(){
-    //quit game
+	//quit game
     if (key[KEY_ESC]){
         if(gameon){//on title screen so exit the program
         	quitgame = 1;
@@ -448,6 +453,7 @@ void getinput(){
 			gameon = 1;//in a game so return to title screen by breaking out of game loop
 			cont = 1;
 		}		
+		printf(".ESCAPED");
     }//only need to use functions below when in game, this seperates mainscreen from game screen input
     if(!gameon){
 	    if (key[KEY_A]){//move left
@@ -470,9 +476,6 @@ void getinput(){
 			    	hotstuff[i]->framedelay = clock();//unused variable for this, use to track time it was sent
 				}
 			}
-	    }//Reserved in case more needed
-	    else if (key[KEY_S]){
-	        
 	    }else if (key[KEY_P] || key[KEY_H]){//checks for P/H press
 	        if(key_shifts & KB_CTRL_FLAG){//checks if ctrl is held too
 				if(paused){
@@ -515,15 +518,61 @@ void getinput(){
 
 void winGame(){
 	//create winning screen
-	
-	/*NEED TO ADD CODE HERE TO HANDLE SCORE SELECTED BITMAP ONCE SCORE IMPLEMENTED*/
-	
-	victory = load_bitmap("victory_screens/11.bmp", NULL);//load
-	acquire_screen();
-	blit(victory,buffer,0,0,0,0,title->w,title->h);
-	blit(buffer,screen,0,0,0,0,SCREEN_W-1,SCREEN_H-1);
+	endtime = (clock()-starttime)/1000;//get time elapsed	
+	//calculate score (maximum score of 3000)
+	for(i = 45; i < endtime; i++){//subtract 100 points for every second greater than 45
+		score -= 100;
+	}
+	//set up char array to store reward number
+	vicnum = malloc(3);
+    vicnum[0] = '\0';
+	//check which winning screen to display based on the score
+	if(score >= 3000){//max score, display highest screen
+		strcat(vicnum, "11");
+	}else if(score > 2500){
+		strcat(vicnum, "10");
+	}else if(score > 2250){
+		strcat(vicnum, "9");
+	}else if(score > 2000){
+		strcat(vicnum, "8");
+	}else if(score > 1750){
+		strcat(vicnum, "7");
+	}else if(score > 1500){
+		strcat(vicnum, "6");
+	}else if(score > 1250){
+		strcat(vicnum, "5");
+	}else if(score > 1000){
+		strcat(vicnum, "4");
+	}else if(score > 750){
+		strcat(vicnum, "3");
+	}else if(score > 500){
+		strcat(vicnum, "2");
+	}else if(score > 250){
+		strcat(vicnum, "1");
+	}else{//worst winning 'reward'
+		strcat(vicnum, "0");
+	}
+	vicpath = malloc(25);
+    vicpath[0] = '\0';
+    strcat(vicpath, "victory_screens/");    
+    strcat(vicpath, vicnum);
+    strcat(vicpath, ".bmp");
+	victory = load_bitmap(vicpath, NULL);//load victory image
+	blit(victory,buffer,0,0,0,0,title->w,title->h);//add image to bufffer
+	blit(buffer,screen,0,0,0,0,title->w,title->h);//put buffer on screen
+	blit(tp,buffer,0,0,0,0,title->w,title->h);//add transparent background to buffer, clearing everything
+	blit(buffer,screen,0,0,0,0,SCREEN_W-1,SCREEN_H-1);//add transparent background over victory background
+	//textprintf_centre_ex(buffer,font,550,450,BLACK,-1,"SCORE: %d", 3000);
+    //textprintf_centre_ex(buffer,font,550,460,BLACK,-1,"TIME DEDUCTIONS: %d", score-3000);
+    textprintf_centre_ex(screen,font,550,440,BLACK,-1,"FINAL SCORE: %d", score);
+    textprintf_centre_ex(screen,font,550,450,BLACK,-1,"Congratulations!");
+	textprintf_centre_ex(screen,font,550,460,BLACK,-1,"There are still %s babes on the beach!", vicnum);
+    textprintf_centre_ex(screen,font,550,840,BLACK,-1,"PRESS SPACE TO RETURN TO TITLE SCREEN");
+    blit(victory,buffer,0,0,0,0,title->w,title->h);//add image to bufffer
+	stretch_blit(screen, buffer, 380, 435, 330, 40, 50, 420, 1000, 100);	
+		blit(buffer,screen,0,0,0,0,title->w,title->h);//add image to bufffer
+	//blit(buffer,screen,0,0,0,0,SCREEN_W-1,SCREEN_H-1);
 	release_screen();
-	//cont = 1;
 	while(gamewin){//create victory screeen and end game
 		if (keypressed()){
 	    	getinput();//wait for spacebar to continue
@@ -543,18 +592,16 @@ void runGame(){
 			for(i = 0; i < NUMENEMIES; i++){//Check if game won
 				if(enemies[i]->alive == 1){
 					i = NUMENEMIES; //Found alive enemy so dont waster resources checking the rest
-				}else if(i == NUMENEMIES - 1){
+				}//else if(i == NUMENEMIES - 1){
 					gamewin = 1; //i can only equal NUMENEMIES - 1 if all enemies have been scanned and dead
 					gameon=0;
 					winGame();
-				}
+				//}
 			}			
 			if(!player[0]->alive){//check if player has died
 				gameon = 1;
-				//cont = 1;
 			}
-	        checkFire();//Operates and maintains the firing function for player and enemy projectiles
-		    
+	        checkFire();//Operates and maintains the firing function for player and enemy projectiles		    
 		}
         rest_callback(15, rest1);//This controls the speed of the game (frame rate)        
         //update the screen
@@ -574,25 +621,22 @@ int main(void){
     //initialize
     allegro_init();
     set_color_depth(16);
-    set_gfx_mode(MODE, WIDTH, HEIGHT, 0, 0);
-    
+    set_gfx_mode(MODE, WIDTH, HEIGHT, 0, 0);    
     install_keyboard();
     install_timer();
     int ret = set_gfx_mode(MODE, WIDTH, HEIGHT, 0, 0);
     if (ret != 0) {
         allegro_message(allegro_error);
         return;
-    }
+    }    
 	quitgame = 0, cont = 1, gamewin = 0, gameon = 1, cooldown = 0, enemyProjectiles = 4;
-	//elfboy = load_font("Elfboyclassic.pcx", palette, NULL);
-	// if (!elfboy)
-    //    printf("NOOOOOOOOO");
     //create double buffer
     buffer = create_bitmap(SCREEN_W,SCREEN_H);
 	//Display title screen
 	intro = load_bitmap("backgrounds/intro_screen.bmp", NULL);//load first title image
 	title = load_bitmap("backgrounds/title_screen.bmp", NULL);//load second title image
 	back = load_bitmap("backgrounds/bgbeach.bmp", NULL);//Load games background
+	tp = load_bitmap("backgrounds/transparent_pink.bmp", NULL);//load transparent background for stretching text
 	pause = load_bitmap("backgrounds/pause_screen.bmp", NULL);//Load pause screen
 	acquire_screen();
 	blit(intro,buffer,0,0,0,0,title->w,title->h);
