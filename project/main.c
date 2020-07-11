@@ -9,6 +9,7 @@ void printGameImage(){
 	printf("CONT: %d\n", cont);
 	//printf(": %d\n", );
 }
+
 //Turns on an animation specified for the given sprite
 void playAnim(SPRITE *spr, int start, int endFrame){
     //make sure animation not already in progress
@@ -21,10 +22,12 @@ void playAnim(SPRITE *spr, int start, int endFrame){
 	}	
 }
 
+//wait for callback
 void rest1(void){
 	resting++;
 }
 
+//updates the properties of the specified sprite
 void updatesprite(SPRITE *spr){
     //update x position
     if (++spr->xcount > spr->xdelay){
@@ -52,6 +55,7 @@ void updatesprite(SPRITE *spr){
     }
 }
 
+//simple warping of given sprite
 void warpsprite(SPRITE *spr){
     //simple screen warping behavior
     //Allegro takes care of clipping
@@ -69,6 +73,7 @@ void warpsprite(SPRITE *spr){
     }
 }
 
+//grabs the frame of a bitmap
 BITMAP *grabframe(BITMAP *source, int width, int height,int startx, int starty, int columns, int frame){
 	BITMAP *temp = create_bitmap(width,height);
     int x = startx + (frame % columns) * width;
@@ -87,6 +92,7 @@ int inside(int x,int y,int left,int top,int right,int bottom) {
 	}
 }
 
+//checks two sprites for collisions
 int collided(SPRITE *first, SPRITE *second, int border) {
 	//get width/height of both sprites 
 	int width1 = first->x + first->width; 
@@ -122,7 +128,7 @@ void checkPlayerProjectile(){
 		    	hotstuff[c]->yspeed = 0;//stop it
 		    	hotstuff[c]->framedelay = 0;//reset
 		    	score += ENEMYPOINTS;
-		    	play_sample(sounds[6], volume, pan, pitch, FALSE);//play enemy hit sound effect
+		    	play_sample(sounds[4], volume, pan, pitch, FALSE);//play enemy hit sound effect
 			}else if (collided(hotstuff[c], enemies[n], 0) && enemies[n]->alive && n <= 9) {
 				enemies[n]->alive = 0;//make enemy dead
 				blit(back, buffer, hotstuff[c]->x, hotstuff[c]->y, hotstuff[c]->x, hotstuff[c]->y, hotstuff[c]->width, hotstuff[c]->height);
@@ -131,7 +137,7 @@ void checkPlayerProjectile(){
 		    	hotstuff[c]->yspeed = 0;//stop it
 		    	hotstuff[c]->framedelay = 0;//reset
 		    	score += ENEMYPOINTS;
-		    	play_sample(sounds[6], volume, pan, pitch, FALSE);//play enemy hit sound effect
+		    	play_sample(sounds[4], volume, pan, pitch, FALSE);//play enemy hit sound effect
 			}//previous else if statements change the hitboxes so they are more accurate
 			//The following is used to detect when an enemy makes it to the bottom
 			if(enemies[n]->y > 650){
@@ -332,6 +338,7 @@ void loadsprites(void){
 	}
 }
 
+//handles the projectiles of the player and enemy
 void checkFire(){
 	//check if an enemy should fire
 	if (clock() > start + 850){//be careful with this timing (850 for 4), its synced with the number of projectiles to make the random aspect work
@@ -392,6 +399,7 @@ void checkFire(){
 	checkPlayerProjectile();//check for collisions to handle
 }
 
+//runs the updates needed for the game
 void updateGame(){
 	//Update score
 	blit(back, buffer, 0, 0, 0, 0, 100, 50);//clear previous time/score
@@ -430,27 +438,46 @@ void updateGame(){
 
 //Deallocates memory used in game
 int destroy(){
-	//remove objects from memory
+	//remove bitmap objects from memory (should never be null, so dont need to check)
     destroy_bitmap(back);
     destroy_bitmap(buffer);
-    //printf("1");
-	for(i=0;i<3;i++){
-        for (f=0; f<enemies[i*10]->maxframe+1; f++){
-			destroy_bitmap(sprite_images[i][f]);
-		}
+    destroy_bitmap(intro);
+    destroy_bitmap(title);    
+    destroy_bitmap(pause);
+    destroy_bitmap(tp);
+    //check this for null, not always used
+    if(victory){
+    	destroy_bitmap(victory);
 	}
-	//printf("2");
-	for(i=0;i<NUMENEMIES;i++){
-		free(enemies[i]);
-	}
-	//printf("3");
-    for (n=0; n<1; n++){
-        for (f=0; f<player[n]->maxframe+1; f++){
-			destroy_bitmap(sprite_images[3][f]);
+    //check that these have been initialized with global variable init
+    if(init){
+    	//destroy all of the enemies
+		for(i=0;i<3;i++){
+	        for (f=0; f<enemies[i*10]->maxframe+1; f++){
+				destroy_bitmap(sprite_images[i][f]);
+			}
 		}
-        free(player[n]);
-    }  
-	//printf("4");  
+		//free enemies memory
+		for(i=0;i<NUMENEMIES;i++){
+			free(enemies[i]);
+		}
+		//destroy and free player
+	    for (n=0; n<1; n++){
+	        for (f=0; f<player[n]->maxframe+1; f++){
+				destroy_bitmap(sprite_images[3][f]);
+			}
+	        free(player[n]);
+	    }  
+	    //destroy projectile sprites
+	    for(i=0;i<4;i++){
+	    	free(hotstuff[i]);
+		}
+		for(i=0;i<enemyProjectiles;i++){
+	    	free(lame[i]);
+		}
+	    destroy_bitmap(sprite_images[4][0]);
+	    destroy_bitmap(sprite_images[5][0]);
+	}      
     return 0;
 }
 
@@ -460,11 +487,11 @@ void getinput(){
     if (key[KEY_ESC]){//quit game
 		if(gameon){//on title screen so exit the program
         	quitgame = 1;
-        	printf(".GAME-QUIT");
+        	//printf(".GAME-QUIT");
 		}else{
 			gameon = 1;//in a game so return to title screen by breaking out of game loop
 			cont = 1;
-			printf(".QUIT-TO-TITLE");
+			//printf(".QUIT-TO-TITLE");
 			rest(250);//try to prevent double escaping	
 		}				
     }else if (key[KEY_M]){//checks for M press
@@ -524,12 +551,12 @@ void getinput(){
 	}else{//Title screen so check for SPACE bar to begin
 		if (key[KEY_SPACE]){//Start a new game
 	        if(!cont){
-				score = 0, starttime = clock(), gameon = 0, gameover = 0, paused = 0;//Initialize the games global variables for a new session	 			    
+				init = 1, score = 0, starttime = clock(), gameon = 0, gameover = 0, paused = 0;//Initialize the games global variables for a new session	 			    
 			    blit(back,buffer,0,0,0,0,back->w,back->h);	//draw the game background	    
 			    loadsprites();//load and set up sprites
-			    printf(".STARTING-GAME");
+			    //printf(".STARTING-GAME");
 		        runGame(); //Run the game,
-		        printf(".GAME-INSTANCE-OVER");
+		        //printf(".GAME-INSTANCE-OVER");
 		    }else{//advance to next screen
 		    	cont = 0;
 		    	acquire_screen();
@@ -542,8 +569,9 @@ void getinput(){
 	}
 }
 
+//Creates the winning screeen based on the player score/time
 void winGame(){
-	printf(".GAMEWON");
+	//printf(".GAMEWON");
 	//create winning screen
 	endtime = (clock()-starttime)/1000;//get time elapsed	
 	//calculate score (maximum score of 3000)
@@ -622,11 +650,14 @@ void winGame(){
 		if (keypressed()){
 	    	getinput();//wait for spacebar to continue
 		}		        	
-	}				
+	}
+	free(vicnum);
+	free(vicpath);				
 }
 
+//creates the losing screen
 void loseGame(){
-	printf(".GAMELOST");
+	//printf(".GAMELOST");
 	play_sample(sounds[1], volume, pan, pitch, FALSE);//play game lost sound effect	 
 	victory = load_bitmap("victory_screens/0.0.bmp", NULL);//load victory image
 	blit(victory,screen,0,0,0,0,title->w,title->h);//add image to screen
@@ -646,6 +677,7 @@ void loseGame(){
 	}
 }
 
+//runs the game loop
 void runGame(){
 	//game loop
     while (!gameon){
@@ -678,7 +710,7 @@ void runGame(){
 	blit(intro,buffer,0,0,0,0,title->w,title->h);
 	blit(buffer,screen,0,0,0,0,SCREEN_W-1,SCREEN_H-1);
 	release_screen();		
-	printf(".RETURN-TITLE");
+	//printf(".RETURN-TITLE");
 }
 
 //Main function, initializes program environment, runs game routine until quit (destroy function called elsewhere for most cleanup)
@@ -704,12 +736,10 @@ int main(void){
     sounds[1] = load_sample("sounds/fail_trumpet.wav");
     sounds[2] = load_sample("sounds/male_grunt.wav");
     sounds[3] = load_sample("sounds/male_oh_yeah.wav");
-    sounds[4] = load_sample("sounds/female_laugh.wav");
-    sounds[5] = load_sample("sounds/female_sigh.wav"); 
-    sounds[6] = load_sample("sounds/fat_sound.wav");
+    sounds[4] = load_sample("sounds/fat_sound.wav");
     //play background music
     play_sample(sounds[0], volume, pan, pitch, TRUE);
-	music = 1, quitgame = 0, cont = 1, gameover = 0, gameon = 1, cooldown = 0, enemyProjectiles = 4;
+	music = 1, quitgame = 0, init = 0, cont = 1, gameover = 0, gameon = 1, cooldown = 0, enemyProjectiles = 4;
     //create double buffer
     buffer = create_bitmap(SCREEN_W,SCREEN_H);
 	//Display title screen
@@ -722,7 +752,7 @@ int main(void){
 	blit(intro,buffer,0,0,0,0,title->w,title->h);
 	blit(buffer,screen,0,0,0,0,SCREEN_W-1,SCREEN_H-1);
 	release_screen();
-	printf(".TITLE");	  
+	//printf(".TITLE");	  
 	while(!quitgame){
 		//Check for input to either quit completely or to start a game
 		if (keypressed()){
@@ -730,9 +760,9 @@ int main(void){
 		}
 		rest(50);
 	} 
-	printf(".DESTROYING");
+	//printf(".DESTROYING");
 	destroy();
-	printf(".ENDED.");
+	//printf(".ENDED.");
     allegro_exit();
 	return 0;        
 }

@@ -1,7 +1,3 @@
-//Female babe icons source Grahhhhh, https://opengameart.org/content/player-icons
-//Background image source: tgfcoder, https://opengameart.org/content/beach-background
-//Fat Female Sprite source: Glorious DPRK Studios, https://opengameart.org/content/sweaty-obese-woman-in-dirty-burlap-underwear-spritesheets
-//Chad and Vlad sprites were made by myself, Mathew Boland
 //////////////////////////////////////////////////
 // Game Programming All In One, Third Edition
 // Chapter 11 - TimerTest
@@ -53,11 +49,11 @@ SPRITE *enemies[30];//enemies
 BITMAP *buffer;
 char * vicnum;
 char * vicpath;
-SAMPLE *sounds[8];
+SAMPLE *sounds[5];
 int volume = 128;
 int pan = 128;
 int pitch = 1000;
-int c, n, i, f, j, music, gameover, quitgame, gameon, cont, paused, score, starttime, endtime, cooldown, start, enemyProjectiles;
+int c, n, i, f, j, music, init, gameover, quitgame, gameon, cont, paused, score, starttime, endtime, cooldown, start, enemyProjectiles;
 //timer variables
 volatile int resting, rested;
 
