@@ -1,5 +1,14 @@
 #include "main.h"
 
+//test function to see all game states
+void printGameImage(){
+	printf("\nGAMEOVER: %d\n", gameover);
+	printf("GAMEON: %d\n", gameon);
+	printf("PAUSED: %d\n", paused);
+	printf("QUITGAME: %d\n", quitgame);
+	printf("CONT: %d\n", cont);
+	//printf(": %d\n", );
+}
 //Turns on an animation specified for the given sprite
 void playAnim(SPRITE *spr, int start, int endFrame){
     //make sure animation not already in progress
@@ -125,6 +134,8 @@ void checkPlayerProjectile(){
 			//The following is used to detect when an enemy makes it to the bottom
 			if(enemies[n]->y > 650){
 				player[0]->alive = 0;//kill player
+				gameover = 1;
+				loseGame();
 			}
 		}
 	}
@@ -134,7 +145,9 @@ void checkPlayerProjectile(){
 void checkEnemyProjectile(){
 	for(i = 0; i < enemyProjectiles; i++){//check for collision with player
 		if (collided(lame[i], player[0], 0)) {
-		//	player[0]->alive = 0;//make player dead
+			//player[0]->alive = 0;//make player dead	
+			//gameover = 1;
+			//loseGame();		
 		}
 	}
 }
@@ -446,14 +459,15 @@ int destroy(){
 void getinput(){
 	//quit game
     if (key[KEY_ESC]){
-        if(gameon){//on title screen so exit the program
+		if(gameon){//on title screen so exit the program
         	quitgame = 1;
         	printf(".GAME-QUIT");
 		}else{
 			gameon = 1;//in a game so return to title screen by breaking out of game loop
 			cont = 1;
-		}		
-		printf(".ESCAPED");
+			printf(".QUIT-TO-TITLE");
+			rest(250);//try to prevent double escaping	
+		}				
     }//only need to use functions below when in game, this seperates mainscreen from game screen input
     if(!gameon){
 	    if (key[KEY_A]){//move left
@@ -493,12 +507,12 @@ void getinput(){
 	    	player[0]->animdir = 0; //stop playing animation
 			player[0]->xspeed = 0;//stop moving, nothing pressed
 		}
-	}else if(gamewin){
-		gamewin=0;
+	}else if(gameover){
+		gameover=0;
 	}else{//Title screen so check for SPACE bar to begin
 		if (key[KEY_SPACE]){//Start a new game
 	        if(!cont){
-				score = 0, starttime = clock(), gameon = 0, gamewin = 0, paused = 0;//Initialize the games global variables for a new session	 			    
+				score = 0, starttime = clock(), gameon = 0, gameover = 0, paused = 0;//Initialize the games global variables for a new session	 			    
 			    blit(back,buffer,0,0,0,0,back->w,back->h);	//draw the game background	    
 			    loadsprites();//load and set up sprites
 			    printf(".STARTING-GAME");
@@ -517,6 +531,7 @@ void getinput(){
 }
 
 void winGame(){
+	printf(".GAMEWON");
 	//create winning screen
 	endtime = (clock()-starttime)/1000;//get time elapsed	
 	//calculate score (maximum score of 3000)
@@ -556,14 +571,14 @@ void winGame(){
     vicpath[0] = '\0';
     strcat(vicpath, "victory_screens/");    
     strcat(vicpath, vicnum);
-    strcat(vicpath, ".bmp");
+    strcat(vicpath, ".bmp");    
 	victory = load_bitmap(vicpath, NULL);//load victory image
 	blit(victory,screen,0,0,0,0,title->w,title->h);//add image to screen
 	blit(tp,buffer,0,0,0,0,title->w,title->h);//add transparent background to buffer, clearing everything
     //add text to the clear buffer so it can be stretched after, depending on score
     switch(atoi(vicnum)){
     	case 0:
-			textprintf_centre_ex(buffer,font,550,430,TEXTCOLOUR,-1,"Good job loser!");
+			textprintf_centre_ex(buffer,font,550,430,TEXTCOLOUR,-1,"You took too long!");
 			textprintf_centre_ex(buffer,font,550,440,TEXTCOLOUR,-1,"All of the babes left!");
 			textprintf_centre_ex(buffer,font,550,450,TEXTCOLOUR,-1,"TIME PENALTIES: %d", 3000-score);
 		    textprintf_centre_ex(buffer,font,550,460,TEXTCOLOUR,-1,"FINAL SCORE: %d", score);
@@ -586,14 +601,34 @@ void winGame(){
 			textprintf_centre_ex(buffer,font,550,450,TEXTCOLOUR,-1,"TIME PENALTIES: %d", 3000-score);
 		    textprintf_centre_ex(buffer,font,550,460,TEXTCOLOUR,-1,"FINAL SCORE: %d", score);
 	}
-    textprintf_centre_ex(buffer,font,550,840,TEXTCOLOUR,-1,"PRESS SPACE TO RETURN TO TITLE SCREEN");
+    textprintf_centre_ex(screen,font,550,840,TEXTCOLOUR,-1,"PRESS ESC TO RETURN TO TITLE SCREEN");
 	stretch_blit(buffer, screen, 380, 425, 330, 50, 50, 400, 1000, 100);//stretch the buffers text to desired size on screen
 	release_screen();
-	while(gamewin){//create victory screeen and end game
+	while(gameover){//create victory screeen and end game
 		if (keypressed()){
 	    	getinput();//wait for spacebar to continue
 		}		        	
 	}				
+}
+
+void loseGame(){
+	printf(".GAMELOST");	 
+	victory = load_bitmap("victory_screens/0.0.bmp", NULL);//load victory image
+	blit(victory,screen,0,0,0,0,title->w,title->h);//add image to screen
+	blit(tp,buffer,0,0,0,0,title->w,title->h);//add transparent background to buffer, clearing everything
+    //add text to the clear buffer so it can be stretched after, depending on score    
+    textprintf_centre_ex(buffer,font,550,430,TEXTCOLOUR,-1,"What a loser! You aren't Chad at all!'");
+	textprintf_centre_ex(buffer,font,550,440,TEXTCOLOUR,-1,"None of the babes want to be around you!", vicnum);
+	textprintf_centre_ex(buffer,font,550,450,TEXTCOLOUR,-1,"TIME PENALTIES: YOU'RE A WASTE OF TIME!'", 3000-score);
+    textprintf_centre_ex(buffer,font,550,460,TEXTCOLOUR,-1,"FINAL SCORE: YOU STINK LOSER!");
+    textprintf_centre_ex(screen,font,550,840,TEXTCOLOUR,-1,"PRESS ESC TO RETURN TO TITLE SCREEN");
+	stretch_blit(buffer, screen, 380, 425, 330, 50, 50, 400, 1000, 100);//stretch the buffers text to desired size on screen
+	release_screen();
+	while(gameover){//create victory screeen and end game
+		if (keypressed()){
+	    	getinput();//wait for spacebar to continue
+		}		        	
+	}
 }
 
 void runGame(){
@@ -605,19 +640,18 @@ void runGame(){
 		}		
 		if(!paused){		
 			updateGame();
+			if(!player[0]->alive){//check if player has died
+				gameon = 1;				
+			}
+	        checkFire();//Operates and maintains the firing function for player and enemy projectiles	
 			for(i = 0; i < NUMENEMIES; i++){//Check if game won
 				if(enemies[i]->alive == 1){
 					i = NUMENEMIES; //Found alive enemy so dont waster resources checking the rest
 				}else if(i == NUMENEMIES - 1){
-					gamewin = 1; //i can only equal NUMENEMIES - 1 if all enemies have been scanned and dead
-					gameon=0;
+					gameover = 1; //i can only equal NUMENEMIES - 1 if all enemies have been scanned and dead
 					winGame();
 				}
-			}			
-			if(!player[0]->alive){//check if player has died
-				gameon = 1;
-			}
-	        checkFire();//Operates and maintains the firing function for player and enemy projectiles		    
+			}				    
 		}
         rest_callback(15, rest1);//This controls the speed of the game (frame rate)        
         //update the screen
@@ -645,7 +679,7 @@ int main(void){
         allegro_message(allegro_error);
         return;
     }    
-	quitgame = 0, cont = 1, gamewin = 0, gameon = 1, cooldown = 0, enemyProjectiles = 4;
+	quitgame = 0, cont = 1, gameover = 0, gameon = 1, cooldown = 0, enemyProjectiles = 4;
     //create double buffer
     buffer = create_bitmap(SCREEN_W,SCREEN_H);
 	//Display title screen

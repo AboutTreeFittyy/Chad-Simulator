@@ -53,8 +53,9 @@ SPRITE *enemies[30];//enemies
 BITMAP *buffer;
 char * vicnum;
 char * vicpath;
-int c, n, i, f, j, gamewin, quitgame, gameon, cont, paused, score, starttime, endtime, cooldown, start, enemyProjectiles;
+int c, n, i, f, j, gameover, quitgame, gameon, cont, paused, score, starttime, endtime, cooldown, start, enemyProjectiles;
 //timer variables
 volatile int resting, rested;
 
 void runGame();
+void loseGame();
