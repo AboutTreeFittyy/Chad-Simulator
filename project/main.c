@@ -558,20 +558,36 @@ void winGame(){
     strcat(vicpath, vicnum);
     strcat(vicpath, ".bmp");
 	victory = load_bitmap(vicpath, NULL);//load victory image
-	blit(victory,buffer,0,0,0,0,title->w,title->h);//add image to bufffer
-	blit(buffer,screen,0,0,0,0,title->w,title->h);//put buffer on screen
+	blit(victory,screen,0,0,0,0,title->w,title->h);//add image to screen
 	blit(tp,buffer,0,0,0,0,title->w,title->h);//add transparent background to buffer, clearing everything
-	blit(buffer,screen,0,0,0,0,SCREEN_W-1,SCREEN_H-1);//add transparent background over victory background
-	//textprintf_centre_ex(buffer,font,550,450,BLACK,-1,"SCORE: %d", 3000);
-    //textprintf_centre_ex(buffer,font,550,460,BLACK,-1,"TIME DEDUCTIONS: %d", score-3000);
-    textprintf_centre_ex(screen,font,550,440,BLACK,-1,"FINAL SCORE: %d", score);
-    textprintf_centre_ex(screen,font,550,450,BLACK,-1,"Congratulations!");
-	textprintf_centre_ex(screen,font,550,460,BLACK,-1,"There are still %s babes on the beach!", vicnum);
-    textprintf_centre_ex(screen,font,550,840,BLACK,-1,"PRESS SPACE TO RETURN TO TITLE SCREEN");
-    blit(victory,buffer,0,0,0,0,title->w,title->h);//add image to bufffer
-	stretch_blit(screen, buffer, 380, 435, 330, 40, 50, 420, 1000, 100);	
-		blit(buffer,screen,0,0,0,0,title->w,title->h);//add image to bufffer
-	//blit(buffer,screen,0,0,0,0,SCREEN_W-1,SCREEN_H-1);
+    //add text to the clear buffer so it can be stretched after, depending on score
+    switch(atoi(vicnum)){
+    	case 0:
+			textprintf_centre_ex(buffer,font,550,430,TEXTCOLOUR,-1,"Good job loser!");
+			textprintf_centre_ex(buffer,font,550,440,TEXTCOLOUR,-1,"All of the babes left!");
+			textprintf_centre_ex(buffer,font,550,450,TEXTCOLOUR,-1,"TIME PENALTIES: %d", 3000-score);
+		    textprintf_centre_ex(buffer,font,550,460,TEXTCOLOUR,-1,"FINAL SCORE: %d", score);
+    		break;
+    	case 1:
+    		textprintf_centre_ex(buffer,font,550,430,TEXTCOLOUR,-1,"It could be worse!");
+			textprintf_centre_ex(buffer,font,550,440,TEXTCOLOUR,-1,"There's still 1 babe on the beach!");
+			textprintf_centre_ex(buffer,font,550,450,TEXTCOLOUR,-1,"TIME PENALTIES: %d", 3000-score);
+		    textprintf_centre_ex(buffer,font,550,460,TEXTCOLOUR,-1,"FINAL SCORE: %d", score);
+    		break;
+    	case 11:
+			textprintf_centre_ex(buffer,font,550,430,TEXTCOLOUR,-1,"WOW! You really are Chad!");
+			textprintf_centre_ex(buffer,font,550,440,TEXTCOLOUR,-1,"All of the babes are still here!");
+			textprintf_centre_ex(buffer,font,550,450,TEXTCOLOUR,-1,"TIME PENALTIES: %d", 3000-score);
+		    textprintf_centre_ex(buffer,font,550,460,TEXTCOLOUR,-1,"FINAL SCORE: %d", score);
+    		break;
+    	default:
+		    textprintf_centre_ex(buffer,font,550,430,TEXTCOLOUR,-1,"Congratulations!");
+			textprintf_centre_ex(buffer,font,550,440,TEXTCOLOUR,-1,"There are still %s babes on the beach!", vicnum);
+			textprintf_centre_ex(buffer,font,550,450,TEXTCOLOUR,-1,"TIME PENALTIES: %d", 3000-score);
+		    textprintf_centre_ex(buffer,font,550,460,TEXTCOLOUR,-1,"FINAL SCORE: %d", score);
+	}
+    textprintf_centre_ex(buffer,font,550,840,TEXTCOLOUR,-1,"PRESS SPACE TO RETURN TO TITLE SCREEN");
+	stretch_blit(buffer, screen, 380, 425, 330, 50, 50, 400, 1000, 100);//stretch the buffers text to desired size on screen
 	release_screen();
 	while(gamewin){//create victory screeen and end game
 		if (keypressed()){
@@ -592,11 +608,11 @@ void runGame(){
 			for(i = 0; i < NUMENEMIES; i++){//Check if game won
 				if(enemies[i]->alive == 1){
 					i = NUMENEMIES; //Found alive enemy so dont waster resources checking the rest
-				}//else if(i == NUMENEMIES - 1){
+				}else if(i == NUMENEMIES - 1){
 					gamewin = 1; //i can only equal NUMENEMIES - 1 if all enemies have been scanned and dead
 					gameon=0;
 					winGame();
-				//}
+				}
 			}			
 			if(!player[0]->alive){//check if player has died
 				gameon = 1;

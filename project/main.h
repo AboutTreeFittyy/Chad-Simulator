@@ -22,6 +22,7 @@
 #define ENEMYPOINTS 100
 #define BLACK makecol(0,0,0)
 #define WHITE makecol(255,255,255)
+#define TEXTCOLOUR makecol(0,0,51)
 
 //define the sprite structure
 typedef struct SPRITE{
