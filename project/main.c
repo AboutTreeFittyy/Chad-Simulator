@@ -122,6 +122,7 @@ void checkPlayerProjectile(){
 		    	hotstuff[c]->yspeed = 0;//stop it
 		    	hotstuff[c]->framedelay = 0;//reset
 		    	score += ENEMYPOINTS;
+		    	play_sample(sounds[6], volume, pan, pitch, FALSE);//play enemy hit sound effect
 			}else if (collided(hotstuff[c], enemies[n], 0) && enemies[n]->alive && n <= 9) {
 				enemies[n]->alive = 0;//make enemy dead
 				blit(back, buffer, hotstuff[c]->x, hotstuff[c]->y, hotstuff[c]->x, hotstuff[c]->y, hotstuff[c]->width, hotstuff[c]->height);
@@ -130,10 +131,13 @@ void checkPlayerProjectile(){
 		    	hotstuff[c]->yspeed = 0;//stop it
 		    	hotstuff[c]->framedelay = 0;//reset
 		    	score += ENEMYPOINTS;
+		    	play_sample(sounds[6], volume, pan, pitch, FALSE);//play enemy hit sound effect
 			}//previous else if statements change the hitboxes so they are more accurate
 			//The following is used to detect when an enemy makes it to the bottom
 			if(enemies[n]->y > 650){
 				player[0]->alive = 0;//kill player
+				enemies[n]->y=0;//move enemy out of lose area
+				enemies[n]->xspeed=0;//stop enemy moving, this is just so it doesn't get triggered twice by accident
 				gameover = 1;
 				loseGame();
 			}
@@ -145,9 +149,11 @@ void checkPlayerProjectile(){
 void checkEnemyProjectile(){
 	for(i = 0; i < enemyProjectiles; i++){//check for collision with player
 		if (collided(lame[i], player[0], 0)) {
-			//player[0]->alive = 0;//make player dead	
-			//gameover = 1;
-			//loseGame();		
+			lame[i]->y=0;//move away from player so it doesnt hit this twice by accident, game already lost
+			lame[i]->yspeed=0;//stop projectile moving
+			player[0]->alive = 0;//make player dead	
+			gameover = 1;
+			loseGame();		
 		}
 	}
 }
@@ -157,7 +163,7 @@ void enemyFired(int enemyNum, int index){
 	if(enemies[enemyNum]->alive){
 		//printf("enemy: %d -- dropping: %d - X\n", enemyNum, enemies[enemyNum]->x+(enemies[enemyNum]->width/2));//test code for enemy fire, checks position and enemy found to see if randomness works
 		lame[index]->x=enemies[enemyNum]->x+(enemies[enemyNum]->width/2);
-		lame[index]->y=enemies[enemyNum]->y;//+enemies[enemyNum]->height;
+		lame[index]->y=enemies[enemyNum]->y;
 		lame[index]->yspeed = 5;
 	}
 	else{
@@ -335,8 +341,7 @@ void checkFire(){
 				updatesprite(lame[i]);
 		        warpsprite(lame[i]);
 				srand(time(NULL));
-				f = rand()%(NUMENEMIES-1);
-				//printf("-%d", rand()%(NUMENEMIES-1));					
+				f = rand()%(NUMENEMIES-1);				
 		        enemyFired(f, i);
         		i = enemyProjectiles;//make sure this loop dies after firing
 			}	
@@ -389,14 +394,9 @@ void checkFire(){
 
 void updateGame(){
 	//Update score
-	/*blit(back, buffer, 0, 0, 0, 0, 100, 50);//clear previous time/score
-	textprintf_centre_ex(buffer,font,50,20,WHITE,-1,"TIME: %d", (clock()-starttime)/1000);//print time since start in seconds
-    textprintf_centre_ex(buffer,font,50,40,WHITE,-1,"SCORE: %d", score);//print current score
-	*/
 	blit(back, buffer, 0, 0, 0, 0, 100, 50);//clear previous time/score
 	textprintf_centre_ex(buffer,font,50,20,WHITE,-1,"TIME: %d", (clock()-starttime)/1000);//print time since start in seconds
     textprintf_centre_ex(buffer,font,50,40,WHITE,-1,"SCORE: %d", score);//print current score
-    //stretch_blit(buffer, screen, 0, 0, 150, 150, 0, 0, 300, 300);
 	//restore the background from regular sprites
     for (n=0; n<NUMPLAYERSPRITES; n++){
     	blit(back, buffer, player[n]->x, player[n]->y, player[n]->x, player[n]->y, player[n]->width, player[n]->height);
@@ -425,8 +425,7 @@ void updateGame(){
             	draw_sprite(buffer, sprite_images[i][enemies[f]->curframe], enemies[f]->x, enemies[f]->y);
 			}				
         }
-	}
-	
+	}	
 }
 
 //Deallocates memory used in game
@@ -457,8 +456,8 @@ int destroy(){
 
 //Exits game when ESC key pressed
 void getinput(){
-	//quit game
-    if (key[KEY_ESC]){
+	//these check keys no matter what screen is displayed or part of the game is currently active
+    if (key[KEY_ESC]){//quit game
 		if(gameon){//on title screen so exit the program
         	quitgame = 1;
         	printf(".GAME-QUIT");
@@ -468,7 +467,19 @@ void getinput(){
 			printf(".QUIT-TO-TITLE");
 			rest(250);//try to prevent double escaping	
 		}				
-    }//only need to use functions below when in game, this seperates mainscreen from game screen input
+    }else if (key[KEY_M]){//checks for M press
+        if(key_shifts & KB_CTRL_FLAG){//checks if ctrl is held too
+			if(music){//music is on so turn off
+	        	music = 0; //mute
+	        	stop_sample(sounds[0]);
+			}else{//music off so turn on
+				music = 1; //unmute
+		    	play_sample(sounds[0], volume, pan, pitch, TRUE);
+			}
+			rest(250);//add delay so that it doesn't turn music on and off
+		}
+	}
+	//only need to use functions below when in game, this seperates mainscreen from game screen input
     if(!gameon){
 	    if (key[KEY_A]){//move left
 	        player[0]->xspeed = -CHADSPEED;
@@ -482,6 +493,7 @@ void getinput(){
 	        for(i = 0; i < 4; i++){//make sure max number of projectiles not fired already on screen
 				if(hotstuff[i]->yspeed == 0 && clock() > cooldown){
 					cooldown = clock() + 1000;
+					play_sample(sounds[2], volume, pan, pitch-400, FALSE);//play flexsound effect (sounds weird with higher pitch so its decreased)
 					player[0]->xspeed = 0;
 			        playAnim(player[0], 8, 15);
 			        hotstuff[i]->x = player[0]->x+(player[0]->width/2);//center on player
@@ -542,7 +554,7 @@ void winGame(){
 	vicnum = malloc(3);
     vicnum[0] = '\0';
 	//check which winning screen to display based on the score
-	if(score >= 3000){//max score, display highest screen
+	if(score >= 3000){//max score, display highest reward screen
 		strcat(vicnum, "11");
 	}else if(score > 2500){
 		strcat(vicnum, "10");
@@ -567,7 +579,7 @@ void winGame(){
 	}else{//worst winning 'reward'
 		strcat(vicnum, "0");
 	}
-	vicpath = malloc(25);
+	vicpath = malloc(25);//alocate memory to the char array/string so that the path for the victory screen can be built
     vicpath[0] = '\0';
     strcat(vicpath, "victory_screens/");    
     strcat(vicpath, vicnum);
@@ -576,7 +588,7 @@ void winGame(){
 	blit(victory,screen,0,0,0,0,title->w,title->h);//add image to screen
 	blit(tp,buffer,0,0,0,0,title->w,title->h);//add transparent background to buffer, clearing everything
     //add text to the clear buffer so it can be stretched after, depending on score
-    switch(atoi(vicnum)){
+    switch(atoi(vicnum)){//selection based on score to give a somewhat dynamic message depending on how well player did 
     	case 0:
 			textprintf_centre_ex(buffer,font,550,430,TEXTCOLOUR,-1,"You took too long!");
 			textprintf_centre_ex(buffer,font,550,440,TEXTCOLOUR,-1,"All of the babes left!");
@@ -604,6 +616,8 @@ void winGame(){
     textprintf_centre_ex(screen,font,550,840,TEXTCOLOUR,-1,"PRESS ESC TO RETURN TO TITLE SCREEN");
 	stretch_blit(buffer, screen, 380, 425, 330, 50, 50, 400, 1000, 100);//stretch the buffers text to desired size on screen
 	release_screen();
+	rest(500);//A sound effect for getting final enemy is playing, so delay playing winning one until it ends
+	play_sample(sounds[3], volume, pan, pitch, FALSE);//play game win sound effect
 	while(gameover){//create victory screeen and end game
 		if (keypressed()){
 	    	getinput();//wait for spacebar to continue
@@ -612,7 +626,8 @@ void winGame(){
 }
 
 void loseGame(){
-	printf(".GAMELOST");	 
+	printf(".GAMELOST");
+	play_sample(sounds[1], volume, pan, pitch, FALSE);//play game lost sound effect	 
 	victory = load_bitmap("victory_screens/0.0.bmp", NULL);//load victory image
 	blit(victory,screen,0,0,0,0,title->w,title->h);//add image to screen
 	blit(tp,buffer,0,0,0,0,title->w,title->h);//add transparent background to buffer, clearing everything
@@ -679,7 +694,22 @@ int main(void){
         allegro_message(allegro_error);
         return;
     }    
-	quitgame = 0, cont = 1, gameover = 0, gameon = 1, cooldown = 0, enemyProjectiles = 4;
+    //install sound
+    if (install_sound(DIGI_AUTODETECT, MIDI_NONE, "") != 0){
+        allegro_message("Error initializing sound system");
+        return 1;
+    }
+    //load sounds
+    sounds[0] = load_sample("sounds/house_party.wav");
+    sounds[1] = load_sample("sounds/fail_trumpet.wav");
+    sounds[2] = load_sample("sounds/male_grunt.wav");
+    sounds[3] = load_sample("sounds/male_oh_yeah.wav");
+    sounds[4] = load_sample("sounds/female_laugh.wav");
+    sounds[5] = load_sample("sounds/female_sigh.wav"); 
+    sounds[6] = load_sample("sounds/fat_sound.wav");
+    //play background music
+    play_sample(sounds[0], volume, pan, pitch, TRUE);
+	music = 1, quitgame = 0, cont = 1, gameover = 0, gameon = 1, cooldown = 0, enemyProjectiles = 4;
     //create double buffer
     buffer = create_bitmap(SCREEN_W,SCREEN_H);
 	//Display title screen

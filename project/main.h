@@ -53,7 +53,11 @@ SPRITE *enemies[30];//enemies
 BITMAP *buffer;
 char * vicnum;
 char * vicpath;
-int c, n, i, f, j, gameover, quitgame, gameon, cont, paused, score, starttime, endtime, cooldown, start, enemyProjectiles;
+SAMPLE *sounds[8];
+int volume = 128;
+int pan = 128;
+int pitch = 1000;
+int c, n, i, f, j, music, gameover, quitgame, gameon, cont, paused, score, starttime, endtime, cooldown, start, enemyProjectiles;
 //timer variables
 volatile int resting, rested;
 
