@@ -1,5 +1,10 @@
 #include "main.h"
-
+/*C file "main.c"
+**Project: Chad Simulator
+**Author: mathew Boland
+**Version: 1.0
+**Last Edited: 11/07/2020
+*/
 //test function to see all game states
 void printGameImage(){
 	printf("\nGAMEOVER: %d\n", gameover);

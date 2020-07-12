@@ -1,7 +1,9 @@
-//////////////////////////////////////////////////
-// Game Programming All In One, Third Edition
-// Chapter 11 - TimerTest
-//////////////////////////////////////////////////
+/*C file "main.h"
+**Project: Chad Simulator
+**Author: mathew Boland
+**Version: 1.0
+**Last Edited: 11/07/2020
+*/
 
 #include <stdio.h>
 #include <time.h>
@@ -20,7 +22,7 @@
 #define WHITE makecol(255,255,255)
 #define TEXTCOLOUR makecol(0,0,51)
 
-//define the sprite structure
+//define the structure of the sprite
 typedef struct SPRITE{
     int dir, alive;
     int x,y;
@@ -33,7 +35,7 @@ typedef struct SPRITE{
     int startFrame; //Used to manipulate where the animation will start (Allows for multiple animations in one sheet)
 }SPRITE;
 
-//variables
+//global variables
 BITMAP *back;
 BITMAP *intro;
 BITMAP *title;
@@ -42,7 +44,7 @@ BITMAP *pause;
 BITMAP *tp;
 BITMAP *temp;
 BITMAP *sprite_images[10][20];//This limits max frames
-SPRITE *player[4];//player sprites
+SPRITE *player[4];//player sprites (didn't need to be an array but not a big deal)
 SPRITE *hotstuff[4];//player projectiles
 SPRITE *lame[4];//enemy projectiles
 SPRITE *enemies[30];//enemies
